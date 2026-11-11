@@ -4,7 +4,7 @@ State as of 2026-11-11. Milestone 0 audit is written; Milestone 1 is started; th
 
 ## Blocked on the owner
 
-1. **Re-convert the party sprites and try the fixed build**: `git pull`, run `unitsprite.py` again for each unit (old files are rejected), copy `party/` and the new `.3dsx`. Report whether units now look like the PC preview, whether attack effects look right, and the frame time and `linear free` from the Select overlay.
+1. **Try the newest build** (no re-conversion needed): do units run to the enemy, strike and return; does the victory animation play its lead-in before looping; do attack effects with rotated pieces look right. Also still wanted: frame time and `linear free` from the Select overlay.
 2. Data packs: **done** - the owner has all 19 packs verified in `C:\FFBE-data`.
 
 ## Milestone 1 - platform foundation (in progress)
@@ -30,7 +30,9 @@ State as of 2026-11-11. Milestone 0 audit is written; Milestone 1 is started; th
 - [x] Unit sprite format identified (sheet PNG + cgg frame CSV + cgs animation CSVs)
 - [x] Unit sprite converter and PC preview (`unitsprite.py`, `spritepreview.py`); field meanings verified by eye
 - [x] Console: load `.f3ds`, draw animated party sprites (compiled; awaiting hardware run)
-- [ ] Confirm on hardware: orientation, rotation direction, additive effects, memory with six sprites
+- [x] Confirmed on hardware: orientation, animation playback, six sprites loaded
+- [ ] Confirm on hardware: rotation direction of effect pieces, additive effects, frame time, memory headroom
+- [ ] Decide per ability whether the unit runs up or attacks in place (needs ability data)
 - [ ] Enemy sprites (monster art format not yet inspected)
 - [ ] Map `F_UNIT_MST` and related tables so the party is real units
 - [ ] Open map and battle background archives

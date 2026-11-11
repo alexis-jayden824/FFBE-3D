@@ -58,5 +58,5 @@ Last updated 2026-11-11. The placeholder battle shell boots on a New 3DS XL; not
 | Table pack format + reader | implemented, host-tested incl. corrupt input | - |
 | Table converter | implemented; run against real APK (17 tables) | fixture test in CI |
 | SD pack loading with error messages, mission select, retreat confirmation, diagnostics overlay | implemented, compiles in CI, awaiting hardware run | owner checklist in NEXT_STEPS |
-| Unit battle sprites (party) | converter host-tested and checked by eye on real units; console renderer compiles, awaiting hardware run; limit burst animations opt-in; enemy sprites not started | hardware checklist in NEXT_STEPS |
+| Unit battle sprites (party) | converter host-tested; **drawn and animated correctly on New 3DS XL** (owner report); run-up / strike / return and victory lead-in compiled, awaiting hardware run; limit burst animations opt-in; enemy sprites not started | hardware checklist in NEXT_STEPS |
 | Saves, audio, sleep/resume | not started | per brief section 10 and 12 |

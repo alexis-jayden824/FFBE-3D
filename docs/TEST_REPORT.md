@@ -60,3 +60,11 @@ Toolchain pin: not yet established (CI uses `devkitpro/devkitarm:latest`; pin th
 | Cause | The converter wrote the texture bottom row first. The GPU reads memory row 0 as the top (v = 1), so every piece was sampled from the vertically mirrored place in the atlas. The PC preview could not catch this because it un-flipped with the same assumption. |
 | Fix | Texture is now written top row first; file version bumped to 2 so version 1 files are rejected rather than drawn wrong. Host tests pass. **The fix has not yet been run on hardware.** |
 | Still unverified on hardware | Rotation direction, additive blending and mirrored parts cannot be judged from the garbled run. Frame time and `linear free` not yet reported. |
+
+## 2026-11-11 - sprites correct on hardware; attack movement and victory lead-in
+
+| Level | Result |
+| --- | --- |
+| Hardware (New 3DS XL), build `4d2caa7` | **Owner confirmed** unit sprites now draw the right way up and animate correctly. Reported gaps: units attacked in place instead of running to the enemy, and the victory animation skipped its lead-in. No report yet on rotated effect pieces, frame time or `linear free`. |
+| This commit | Units run to the target, strike, and run back (presentation only; battle rules and chain timing unchanged). Victory plays `win_before` once, then loops `win`. Host tests pass; console compile: see CI. **Not yet run on hardware.** |
+| Known difference from the original | Every unit runs up for every attack. In the original, ranged and magic attacks are performed from the unit's place; which abilities move the unit is in ability data that is not decoded yet. |

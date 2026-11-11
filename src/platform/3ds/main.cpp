@@ -160,7 +160,22 @@ int main() {
         snprintf(path, sizeof path, "%s/%d.f3ds", kPartyDir, i + 1);
         if (unit_sprite_load(path, party_sprite[i])) ++sprites_loaded;
     }
-    bool attacking[kParty] = {};
+    // Presentation only: how a unit moves while acting. Never read by the battle rules.
+    enum class Act : u8 { None, DashOut, Strike, DashBack };
+    constexpr int kDashFrames = 10;
+    Act act[kParty] = {};
+    int act_t[kParty] = {};
+    float dash_x[kParty] = {}, dash_y[kParty] = {};   // offset from the unit's home spot to its strike spot
+    int win_stage[kParty] = {};                        // 0 not started, 1 playing win_before, 2 looping win
+    auto home_x = [](int i) { return 268.f + (i % 2) * 60.f + 36.f; };
+    auto home_y = [](int i) { return 30.f + (i / 2) * 60.f + (i % 2) * 14.f + 44.f; };
+    auto play_once = [&](int i, const char* name) {
+        int a = party_sprite[i].ok ? party_sprite[i].sprite.find_anim(name) : -1;
+        if (a < 0) return false;
+        party_anim[i].play(party_sprite[i].sprite, a, false);
+        return true;
+    };
+    auto reset_acts = [&]() { for (int i = 0; i < kParty; ++i) { act[i] = Act::None; act_t[i] = 0; win_stage[i] = 0; } };
     auto set_anim = [&](int i, const char* name, bool loop) {
         if (!party_sprite[i].ok) return;
         int a = party_sprite[i].sprite.find_anim(name);
@@ -212,6 +227,7 @@ int main() {
         }
         target = 0; phase = Phase::Command;
         reset_turn();
+        reset_acts();
     };
     auto next_target = [&]() {
         int n = int(battle.enemies.size());
@@ -222,9 +238,11 @@ int main() {
         if (!battle.enemies[target].alive()) next_target();
         if (!battle.enemies[target].alive()) return;
         fired[i] = true;
-        if (party_sprite[i].ok) {
-            int a = party_sprite[i].sprite.find_anim("atk");
-            if (a >= 0) { party_anim[i].play(party_sprite[i].sprite, a, false); attacking[i] = true; }
+        {   // Run up to the target, strike, run back.
+            Rect r = enemy_rect(target, int(battle.enemies.size()));
+            dash_x[i] = (r.x + r.w + 30.f) - home_x(i);
+            dash_y[i] = (r.y + r.h) - home_y(i);
+            act[i] = Act::DashOut; act_t[i] = 0;
         }
         clock_running = true;            // chain timing is measured from the first press
         queued.push_back({ u8(i), kPartyAttack, u8(target), u16(turn_frame) });
@@ -331,10 +349,37 @@ int main() {
             for (int i = 0; i < kParty; ++i) {
                 if (!party_sprite[i].ok) continue;
                 const Unit& u = battle.party[i];
-                if (attacking[i] && party_anim[i].finished) attacking[i] = false;
-                if (!u.alive()) { attacking[i] = false; set_anim(i, "dead", true); }
-                else if (scene == Scene::Result && result == Outcome::Victory) { attacking[i] = false; set_anim(i, "win", true); }
-                else if (!attacking[i]) set_anim(i, u.hp * 4 < u.max_hp ? "dying" : "idle", true);
+                if (!u.alive()) {
+                    act[i] = Act::None; win_stage[i] = 0;
+                    set_anim(i, "dead", true);
+                } else if (scene == Scene::Result && result == Outcome::Victory) {
+                    act[i] = Act::None;
+                    // Lead-in once, then the looping pose.
+                    if (win_stage[i] == 0) win_stage[i] = play_once(i, "win_before") ? 1 : 2;
+                    if (win_stage[i] == 1 && party_anim[i].finished) win_stage[i] = 2;
+                    if (win_stage[i] == 2) set_anim(i, "win", true);
+                } else {
+                    win_stage[i] = 0;
+                    switch (act[i]) {
+                        case Act::DashOut:
+                            set_anim(i, "move", true);
+                            if (++act_t[i] >= kDashFrames) {
+                                if (play_once(i, "atk")) act[i] = Act::Strike;
+                                else { act[i] = Act::DashBack; act_t[i] = 0; }
+                            }
+                            break;
+                        case Act::Strike:
+                            if (party_anim[i].finished) { act[i] = Act::DashBack; act_t[i] = 0; }
+                            break;
+                        case Act::DashBack:
+                            set_anim(i, "move", true);
+                            if (++act_t[i] >= kDashFrames) act[i] = Act::None;
+                            break;
+                        case Act::None:
+                            set_anim(i, u.hp * 4 < u.max_hp ? "dying" : "idle", true);
+                            break;
+                    }
+                }
                 party_anim[i].advance(party_sprite[i].sprite);
             }
 
@@ -376,9 +421,15 @@ int main() {
             for (int i = 0; i < kParty; ++i) {
                 const Unit& u = battle.party[i];
                 float x = 268.f + (i % 2) * 60.f, y = 30.f + (i / 2) * 60.f + (i % 2) * 14.f;
+                // How far along the run-up this unit is: 0 at home, 1 at the strike spot (eased).
+                float t = act[i] == Act::Strike ? 1.f
+                        : act[i] == Act::DashOut ? float(act_t[i]) / kDashFrames
+                        : act[i] == Act::DashBack ? 1.f - float(act_t[i]) / kDashFrames : 0.f;
+                t = t * t * (3.f - 2.f * t);
                 SpriteStep st;
                 if (party_sprite[i].ok && party_anim[i].current(party_sprite[i].sprite, st))
-                    unit_sprite_draw(party_sprite[i], st.frame, x + 36 + st.dx * kUnitSize, y + 44 + st.dy * kUnitSize, kUnitSize, 0.3f);
+                    unit_sprite_draw(party_sprite[i], st.frame, home_x(i) + dash_x[i] * t + st.dx * kUnitSize,
+                                     home_y(i) + dash_y[i] * t + st.dy * kUnitSize, kUnitSize, 0.3f);
                 else
                     C2D_DrawRectSolid(x, y, 0.3f, 36, 44, !u.alive() ? kDim : fired[i] ? kPanel : kAlly);
             }
