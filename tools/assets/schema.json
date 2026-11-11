@@ -1,0 +1,3 @@
+{
+  "_comment": "Maps opaque source column keys to readable names, per table. Only add a mapping once it has been verified by observing the data; unmapped keys pass through unchanged. Format: { \"TABLE_NAME\": { \"sourceKey\": \"readable_name\" } }"
+}

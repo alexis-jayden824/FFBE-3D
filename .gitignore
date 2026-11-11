@@ -1,0 +1,17 @@
+# Build output
+build/
+build-3ds/
+*.3dsx
+*.smdh
+*.elf
+*.cia
+__pycache__/
+
+# Game data is never committed. Converter inputs and outputs live here, locally.
+data/
+*.apk
+*.f3dp
+*.cpk
+*.acb
+*.awb
+*.dat

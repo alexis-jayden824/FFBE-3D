@@ -1,0 +1,4 @@
+# {"table": "T_SAMPLE", "fields": ["id", "name", "hp", "tags"]}
+30	Gel Cube	120	1,2
+10	Moss Imp	45	
+20	Tin Sentry	300	7:1

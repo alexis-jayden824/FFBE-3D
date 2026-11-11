@@ -1,0 +1,27 @@
+name: ci
+on:
+  push:
+  pull_request:
+
+jobs:
+  host-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build
+      - run: ctest --test-dir build --output-on-failure
+
+  build-3dsx:
+    runs-on: ubuntu-24.04
+    # TODO(pin): replace :latest with the image digest of the first green run
+    # and record it in docs/TEST_REPORT.md.
+    container: devkitpro/devkitarm:latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ffbe3d-3dsx
+          path: ffbe3d.3dsx
+          if-no-files-found: error
