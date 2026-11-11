@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <fstream>
 #include <iterator>
+#include <string>
 #include <vector>
 
 using namespace f3d;
@@ -56,6 +57,16 @@ int main(int argc, char** argv) {
         if (e.monster_id == 12) { CHECK(e.parts == 2 && e.hp == 120 && e.atk == 22); }
         else { CHECK(e.monster_id == 13 && e.hp == 150000000000LL && e.level == 99); }
     }
+
+    // Mission list: only missions with a battle phase, ascending, no duplicates.
+    std::vector<int32_t> ids;
+    list_missions(pack, ids);
+    CHECK(ids.size() == 4 && ids[0] == 500 && ids[1] == 600 && ids[2] == 700 && ids[3] == 900);
+    Pack none; list_missions(none, ids); CHECK(ids.empty());
+
+    // Names come straight from the pack.
+    { Rng s(1); std::vector<Wave> w; load_encounter(pack, 500, s, w);
+      CHECK(std::string(w[0].enemies[0].name) == "Moss Imp" && std::string(w[0].enemies[1].name) == "Tin Sentry"); }
 
     // Same seed, same result.
     Rng r1(77), r2(77); std::vector<Wave> w1, w2;

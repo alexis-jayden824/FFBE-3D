@@ -16,6 +16,7 @@ namespace f3d {
 
 struct EnemySpec {
     int32_t monster_id = 0;
+    const char* name = "";  // points into the pack; valid while the pack blob is alive
     int order = 0;          // slot order within the group
     int parts = 0;          // number of part rows this monster has (only part 1 is used so far)
     int level = 1;
@@ -39,6 +40,10 @@ const char* to_string(EncounterError e);
 // given) receives the id that could not be resolved.
 EncounterError load_encounter(const Pack& pack, int32_t mission_id, Rng& rng,
                               std::vector<Wave>& out, int32_t* bad_id = nullptr);
+
+// Every mission id that has at least one battle phase, ascending. Cheap: one
+// pass over the phase table, no resolution (a listed mission may still fail to load).
+void list_missions(const Pack& pack, std::vector<int32_t>& out);
 
 // Turns one wave into enemy Units for the battle core.
 void spawn_wave(const Wave& wave, std::vector<Unit>& enemies);

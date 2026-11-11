@@ -21,3 +21,13 @@ Toolchain pin: not yet established (CI uses `devkitpro/devkitarm:latest`; pin th
 | Encounter chain on real data | **Ran** `f3d_inspect master.f3dp validate` on the pack built from `exvius-offline-v0_1_30.apk`: 21,427 missions in the phase table; 14,444 resolve end to end (32,087 waves, largest 25 enemies); 6,120 have no battle phases; 66 point at an empty lottery id; 797 reference a monster with no stats row. An independent Python pass over the same tables agrees (863 unresolved of 15,307 missions with battle phases). |
 | 3DS compile of this commit | See the CI run for this commit. |
 | Emulator | **Not run.** |
+
+## 2026-11-11 - mission select and real waves on console
+
+| Level | Result |
+| --- | --- |
+| Hardware (New 3DS XL), previous build | Owner reported the placeholder battle shell "runs good" (commit `eef80ab` build). No itemised input results were given; controls from that build are marked (hw) in CONTROLS.md on that basis. |
+| Host tests | **Passed** (`core`, `encounter`), including mission listing and enemy names. |
+| Console pack on real data | **Ran** `mstpack.py --preset encounter` on the owner's APK: 4 tables, 2.6 MB. `f3d_inspect validate` on that pack gives the same numbers as the full pack (14,444 missions resolve). |
+| 3DS compile of this commit | See the CI run for this commit. |
+| Hardware, this build | **Not run.** New and untested on console: SD pack loading and its error messages, mission select, multi-wave battles with up to 25 enemies, retreat dialog, diagnostics overlay, Japanese monster names in the system font. |

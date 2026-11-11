@@ -42,6 +42,7 @@ EncounterError load_encounter(const Pack& pack, int32_t mission_id, Rng& rng,
     Cols lc = cols(lottery, { "lottery_id", "weight", "group_id" });
     Cols gc = cols(groups, { "group_id", "monster_id", "slot_order" });
     Cols mc = cols(parts, { "monster_id", "part_num", "hp", "mp", "atk", "def", "mag", "spr", "level" });
+    int name_col = parts.column("name");   // optional
     // Key columns must be column 0 (the pack sorts and searches on it).
     if (!pc.ok || !lc.ok || !gc.ok || !mc.ok || pc.v[0] || lc.v[0] || gc.v[0] || mc.v[0])
         return fail(EncounterError::MissingColumn, 0);
@@ -86,6 +87,7 @@ EncounterError load_encounter(const Pack& pack, int32_t mission_id, Rng& rng,
             e.mag = clamp_int(parts.i64(body, mc.v[6]));
             e.spr = clamp_int(parts.i64(body, mc.v[7]));
             e.level = clamp_int(parts.i64(body, mc.v[8]));
+            if (name_col >= 0 && parts.is_string(uint32_t(name_col))) e.name = parts.s(body, uint32_t(name_col));
             w.enemies.push_back(e);
         }
         std::stable_sort(w.enemies.begin(), w.enemies.end(),
@@ -95,6 +97,19 @@ EncounterError load_encounter(const Pack& pack, int32_t mission_id, Rng& rng,
     if (out.empty()) return fail(EncounterError::NoBattlePhases, mission_id);
     std::stable_sort(out.begin(), out.end(), [](const Wave& a, const Wave& b) { return a.phase < b.phase; });
     return EncounterError::Ok;
+}
+
+void list_missions(const Pack& pack, std::vector<int32_t>& out) {
+    out.clear();
+    Table phases = pack.table("F_MISSION_PHASE_MST");
+    if (!phases.valid()) return;
+    int type = phases.column("phase_type");
+    if (type < 0 || phases.column("mission_id") != 0) return;
+    for (uint32_t r = 0; r < phases.rows(); ++r) {
+        if (phases.i64(r, uint32_t(type)) != kBattlePhase) continue;
+        int32_t id = phases.i(r, 0);
+        if (out.empty() || out.back() != id) out.push_back(id);   // rows are sorted by mission id
+    }
 }
 
 void spawn_wave(const Wave& wave, std::vector<Unit>& enemies) {

@@ -20,6 +20,11 @@ import argparse, io, json, os, re, struct, sys, zipfile
 
 INT_RE = re.compile(r"-?\d{1,10}\Z")
 
+# Console packs: just the tables (and, with --mapped-only, columns) one feature needs.
+PRESETS = {
+    "encounter": ["F_MISSION_PHASE_MST", "F_BATTLE_LOTTERY_MST", "F_BATTLE_GROUP_MST", "F_MONSTER_PARTS_MST"],
+}
+
 
 def as_i32(v):
     """Return int if v is a plain integer that fits in i32, else None."""
@@ -144,12 +149,20 @@ def main(argv=None):
     ap.add_argument("-o", "--out", required=True)
     ap.add_argument("--schema", default=os.path.join(os.path.dirname(__file__), "schema.json"))
     ap.add_argument("--only", nargs="*", help="pack only these table names")
+    ap.add_argument("--mapped-only", action="store_true",
+                    help="drop columns that have no schema mapping (smaller packs for the console)")
+    ap.add_argument("--preset", choices=sorted(PRESETS),
+                    help="shorthand for a console pack: " + ", ".join(sorted(PRESETS)))
     args = ap.parse_args(argv)
 
     schema = {}
     if os.path.exists(args.schema):
         with open(args.schema, encoding="utf-8") as f:
             schema = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+
+    if args.preset:
+        args.only = PRESETS[args.preset]
+        args.mapped_only = True
 
     tables, seen = [], set()
     for name, fields, rows in load_sources(args.inputs):
@@ -159,6 +172,13 @@ def main(argv=None):
             print(f"warning: duplicate table {name} skipped", file=sys.stderr)
             continue
         seen.add(name)
+        if args.mapped_only:
+            keep = [i for i, k in enumerate(fields) if k in schema.get(name, {})]
+            if not keep:
+                print(f"warning: {name} has no mapped columns, skipped", file=sys.stderr)
+                continue
+            fields = [fields[i] for i in keep]
+            rows = [[r[i] for i in keep] for r in rows]
         tables.append((name, fields, rows))
     if not tables:
         sys.exit("no tables found")

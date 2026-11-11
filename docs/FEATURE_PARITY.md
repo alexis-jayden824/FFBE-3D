@@ -18,7 +18,7 @@ Last updated 2026-11-11. The placeholder battle shell boots on a New 3DS XL; not
 | Ailments, breaks, dispel, killers, cover, counters, mitigation | `libgame.so` | unverified | not started | per-effect golden tests |
 | Limit bursts, espers, dual wield, multi-cast, Brave Shift | `libgame.so` | unverified | not started (gauge fill only) | audit each individually |
 | Enemy AI scripts, thresholds, phases | `source/server/content/battle/F_MONSTER_SKILL_SET_MST.tsv`, `F_MONSTER_SKILL_MST.tsv` | verified upstream (data present) | placeholder AI only | decode skill-set format; scripted-boss replays |
-| Encounters, waves | `F_BATTLE_GROUP_MST`, `F_MISSION_PHASE_MST`, `F_BATTLE_LOTTERY_MST`, `F_MONSTER_PARTS_MST`; chain documented in `source/server/battle_content.py` | verified upstream | partial, host-tested: 14,444 of 15,307 missions with battle phases resolve on real data; body part only; stat order inferred; not on console | `f3d_inspect validate`; classify the 863 failures |
+| Encounters, waves | `F_BATTLE_GROUP_MST`, `F_MISSION_PHASE_MST`, `F_BATTLE_LOTTERY_MST`, `F_MONSTER_PARTS_MST`; chain documented in `source/server/battle_content.py` | verified upstream | partial, host-tested: 14,444 of 15,307 missions with battle phases resolve on real data; body part only; stat order inferred; console loading compiled, awaiting hardware run | `f3d_inspect validate`; classify the 863 failures |
 | Drops and result settlement | `source/server/ffbe_battle.py` (`roll_drops`, `apply_result_drops`) | verified upstream | not started | port rules; statistical tests with seeded RNG |
 | Mission clear conditions | `source/server/ffbe_battle.py` (`_cond_*`, `CONDITION_CHECKS`) | verified upstream | not started | one test per condition |
 | Auto / repeat / speed | `source/exvius/mission_repeat.js`, `source/server/exvius_repeat.py` | verified upstream | not started | - |
@@ -56,4 +56,5 @@ Last updated 2026-11-11. The placeholder battle shell boots on a New 3DS XL; not
 | Dual-screen layout, buttons, touch | implemented; **boots on New 3DS XL** (owner report); inputs not yet confirmed | owner input checklist in NEXT_STEPS |
 | Table pack format + reader | implemented, host-tested incl. corrupt input | - |
 | Table converter | implemented; run against real APK (17 tables) | fixture test in CI |
-| Saves, audio, SD content loading, sleep/resume | not started | per brief section 10 and 12 |
+| SD pack loading with error messages, mission select, retreat confirmation, diagnostics overlay | implemented, compiles in CI, awaiting hardware run | owner checklist in NEXT_STEPS |
+| Saves, audio, sleep/resume | not started | per brief section 10 and 12 |

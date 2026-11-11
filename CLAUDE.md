@@ -32,3 +32,4 @@ python3 tools/assets/mstpack.py <apk|zip|folder|tsv|ndjson> -o data/master.f3dp
 - APK contains tables and text only; sprites/maps/audio are in ~14.65 GB of CPK/ACB release packs, formats unverified.
 - Battle formulas in `src/core/battle.cpp` are from general knowledge and unverified against the real game.
 - Encounter chain (mission -> phases -> lottery -> group -> monster parts) is implemented in `src/content/encounter.cpp`; battle phases have `phase_type` 2. HP needs 64 bits. ATK/DEF/MAG/SPR column order is inferred, not verified.
+- Console reads `sdmc:/3ds/ffbe3d/encounter.f3dp` (built with `mstpack.py --preset encounter`, 2.6 MB). Scenes (select/battle/result) currently live in `src/platform/3ds/main.cpp`. Party and attacks are placeholders.
