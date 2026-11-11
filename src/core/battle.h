@@ -94,6 +94,7 @@ struct HitEvent {
     uint16_t frame;
     Side attacker_side;
     uint8_t attacker, target;
+    uint32_t ability;    // id of the ability that produced this hit
     int64_t damage;      // negative = healing
     int chain_pm;        // multiplier applied to this hit
     int chain_count;     // chain length after this hit
@@ -122,8 +123,9 @@ public:
     // appended in frame order so the front end can animate them 1:1.
     void resolve(Side side, const std::vector<Action>& actions, std::vector<HitEvent>& out);
 
-    // Simple built-in enemy turn: every living enemy uses its first ability on
-    // a random living party member, staggered so enemies do not chain.
+    // Simple built-in enemy turn: every living enemy uses one of its abilities at
+    // random on a random living party member, staggered so enemies do not chain.
+    // (Real enemy AI scripts are not implemented.)
     void enemy_turn(std::vector<HitEvent>& out);
 
     // Tick buffs, clear guard, advance turn counter. Call after the enemy turn.

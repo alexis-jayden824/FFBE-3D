@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-Wall -Wextra -Werror)
 
-add_library(f3d src/core/battle.cpp src/content/pack.cpp src/content/encounter.cpp)
+add_library(f3d src/core/battle.cpp src/content/pack.cpp src/content/encounter.cpp src/content/skills.cpp)
 target_include_directories(f3d PUBLIC src)
 
 enable_testing()

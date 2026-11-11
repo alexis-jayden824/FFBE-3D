@@ -1,8 +1,10 @@
 // Console front end, Milestone 1/2 bridge.
 //
 // Scenes: mission select -> battle (all waves of the mission) -> result.
-// Enemies come from the encounter pack on SD if present; the party is still a
-// placeholder (no unit data yet) and all graphics are placeholder rectangles.
+// Enemies and their damage skills (name, element, attack type, hit timing)
+// come from the encounter pack on SD if present. Skill power, targeting and
+// enemy AI are not decoded, the party is a placeholder (no unit data yet) and
+// all graphics are placeholder rectangles.
 // Without a pack the program still runs, with a built-in placeholder fight.
 //
 // What has and has not been run on hardware is tracked in docs/TEST_REPORT.md.
@@ -14,6 +16,7 @@
 #include <vector>
 
 #include "content/encounter.h"
+#include "content/skills.h"
 #include "core/battle.h"
 
 using namespace f3d;
@@ -166,6 +169,9 @@ int main() {
     long long last_damage = 0;
     u32 turn_frame = 0;
     bool clock_running = false, confirm_retreat = false;
+    std::vector<SkillInfo> skill_names;          // names of loaded enemy skills (point into the pack)
+    const char* enemy_log[3] = { "", "", "" };  // last distinct enemy skills used
+    int enemy_log_n = 0;
     Phase phase = Phase::Command;
     Outcome result = Outcome::Ongoing;
 
@@ -177,7 +183,11 @@ int main() {
     auto start_wave = [&](int idx) {
         wave_idx = idx;
         spawn_wave(waves[idx], battle.enemies);
-        for (Unit& e : battle.enemies) e.abilities = { kEnemyAttack };
+        for (size_t i = 0; i < battle.enemies.size(); ++i) {
+            Unit& e = battle.enemies[i];
+            if (lp.ok) load_monster_skills(lp.pack, waves[idx].enemies[i].skill_set_id, battle.abilities, e.abilities, skill_names);
+            if (e.abilities.empty()) e.abilities = { kEnemyAttack };   // no damage skill decoded: generic attack
+        }
         target = 0; phase = Phase::Command;
         reset_turn();
     };
@@ -230,6 +240,7 @@ int main() {
                 add_abilities(battle);
                 add_party(battle, level);
                 focus = 0; last_chain = 0; last_damage = 0; confirm_retreat = false;
+                skill_names.clear(); enemy_log_n = 0;
                 start_wave(0);
                 scene = Scene::Battle;
             }
@@ -270,6 +281,14 @@ int main() {
                 } else {
                     events.clear();
                     battle.enemy_turn(events);
+                    enemy_log_n = 0;
+                    for (const HitEvent& e : events) {
+                        const char* nm = e.ability == kEnemyAttack ? "Attack" : nullptr;
+                        for (const SkillInfo& si : skill_names) if (si.id == e.ability) { nm = si.name; break; }
+                        bool dup = false;
+                        for (int k = 0; k < enemy_log_n; ++k) if (enemy_log[k] == nm) dup = true;
+                        if (nm && !dup && enemy_log_n < 3) enemy_log[enemy_log_n++] = nm;
+                    }
                     battle.end_round();
                     reset_turn();
                     if (!battle.enemies[target].alive()) next_target();
@@ -327,6 +346,8 @@ int main() {
                 const Unit& e = battle.enemies[target];
                 text(6, 222, 0.45f, kWhite, "Lv %d %s  %lld/%lld", spec.level, spec.name, (long long)e.hp, (long long)e.max_hp);
             }
+            if (scene == Scene::Battle && phase == Phase::Command)
+                for (int k = 0; k < enemy_log_n; ++k) text(240, 200 - (enemy_log_n - 1 - k) * 13, 0.4f, kFoe, "> %s", enemy_log[k]);
             if (scene == Scene::Result) {
                 C2D_DrawRectSolid(0, 90, 0.5f, 400, 60, kShade);
                 text(140, 108, 0.9f, kWhite, result == Outcome::Victory ? "VICTORY" : "DEFEAT");

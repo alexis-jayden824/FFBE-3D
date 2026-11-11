@@ -112,7 +112,7 @@ void Battle::resolve(Side side, const std::vector<Action>& actions, std::vector<
                 int64_t heal = int64_t(u.eff(SPR)) * ab.power_pm / 1000 * (100 + u.level) / 100;
                 heal = std::min(heal, t.max_hp - t.hp);
                 t.hp += heal;
-                out.push_back({ a.start_frame, side, a.actor, idx[i], -heal, 1000, 0, false, false });
+                out.push_back({ a.start_frame, side, a.actor, idx[i], ab.id, -heal, 1000, 0, false, false });
             }
             continue;
         }
@@ -165,7 +165,7 @@ void Battle::resolve(Side side, const std::vector<Action>& actions, std::vector<
         Unit& u = us[p.actor];
         u.lb_gauge = std::min(u.lb_max, u.lb_gauge + p.ab->lb_fill);
 
-        out.push_back({ p.frame, side, p.actor, p.target, dmg, mult, c.count, spark, !t.alive() });
+        out.push_back({ p.frame, side, p.actor, p.target, p.ab->id, dmg, mult, c.count, spark, !t.alive() });
     }
 }
 
@@ -179,7 +179,8 @@ void Battle::enemy_turn(std::vector<HitEvent>& out) {
         for (size_t j = 0; j < party.size() && n < kMaxPerSide; ++j)
             if (party[j].alive()) alive[n++] = uint8_t(j);
         if (!n) break;
-        acts.push_back({ uint8_t(i), e.abilities[0], alive[rng.range(0, n - 1)], frame });
+        uint32_t pick = e.abilities[size_t(rng.range(0, int(e.abilities.size()) - 1))];
+        acts.push_back({ uint8_t(i), pick, alive[rng.range(0, n - 1)], frame });
         frame = uint16_t(frame + 60);   // one second apart: no enemy chains
     }
     resolve(Side::Enemy, acts, out);

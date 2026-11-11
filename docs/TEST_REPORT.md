@@ -31,3 +31,13 @@ Toolchain pin: not yet established (CI uses `devkitpro/devkitarm:latest`; pin th
 | Console pack on real data | **Ran** `mstpack.py --preset encounter` on the owner's APK: 4 tables, 2.6 MB. `f3d_inspect validate` on that pack gives the same numbers as the full pack (14,444 missions resolve). |
 | 3DS compile of this commit | See the CI run for this commit. |
 | Hardware, this build | **Not run.** New and untested on console: SD pack loading and its error messages, mission select, multi-wave battles with up to 25 enemies, retreat dialog, diagnostics overlay, Japanese monster names in the system font. |
+
+## 2026-11-11 - enemy skills
+
+| Level | Result |
+| --- | --- |
+| Hardware (New 3DS XL), previous build (`ee4ddc0`) | Owner built the pack on Windows (4 tables, 2.6 MB, matching our numbers), copied it and the build to SD, and reported "It worked". No itemised answers were given for pack message, name rendering, wave progression or frame time, so those remain unconfirmed individually. |
+| Host tests | **Passed** (`core`, `encounter` incl. skill parsing, skill loading, random skill choice, event ability ids). |
+| Skills on real data | **Ran** `f3d_inspect validate` on the 6-table console pack (4.0 MB): 14,732 monster parts have a skill set and 2,415 do not; 76,891 skill slots listed, 49,762 loaded as damage skills, 27,129 are non-damage (not implemented), 0 missing; 1,043 parts with a set have no damage skill and fall back to a generic attack. |
+| 3DS compile of this commit | See the CI run for this commit. |
+| Hardware, this build | **Not run.** New on console: enemy skills loaded per wave, skill names shown after the enemy turn. |

@@ -43,6 +43,7 @@ EncounterError load_encounter(const Pack& pack, int32_t mission_id, Rng& rng,
     Cols gc = cols(groups, { "group_id", "monster_id", "slot_order" });
     Cols mc = cols(parts, { "monster_id", "part_num", "hp", "mp", "atk", "def", "mag", "spr", "level" });
     int name_col = parts.column("name");   // optional
+    int set_col = parts.column("skill_set_id");   // optional
     // Key columns must be column 0 (the pack sorts and searches on it).
     if (!pc.ok || !lc.ok || !gc.ok || !mc.ok || pc.v[0] || lc.v[0] || gc.v[0] || mc.v[0])
         return fail(EncounterError::MissingColumn, 0);
@@ -87,6 +88,7 @@ EncounterError load_encounter(const Pack& pack, int32_t mission_id, Rng& rng,
             e.mag = clamp_int(parts.i64(body, mc.v[6]));
             e.spr = clamp_int(parts.i64(body, mc.v[7]));
             e.level = clamp_int(parts.i64(body, mc.v[8]));
+            if (set_col >= 0) e.skill_set_id = int32_t(parts.i64(body, uint32_t(set_col)));
             if (name_col >= 0 && parts.is_string(uint32_t(name_col))) e.name = parts.s(body, uint32_t(name_col));
             w.enemies.push_back(e);
         }

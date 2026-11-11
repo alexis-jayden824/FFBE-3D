@@ -14,7 +14,7 @@ On a PC with Python 3, in a checkout of this repository:
 python3 tools/assets/mstpack.py path/to/exvius-offline.apk --preset encounter -o encounter.f3dp
 ```
 
-This writes a pack of about 2.6 MB (measured on `exvius-offline-v0_1_30.apk`). Copy it to the SD card as:
+This writes a pack of about 4.0 MB (measured on `exvius-offline-v0_1_30.apk`; six tables). Packs built before enemy skills were added (2.6 MB, four tables) still load, but enemies then only use a generic attack - rebuild to get skills. Copy it to the SD card as:
 
 ```
 /3ds/ffbe3d/encounter.f3dp

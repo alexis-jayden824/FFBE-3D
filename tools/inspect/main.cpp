@@ -3,6 +3,7 @@
 //   f3d_inspect <pack> mission <id>        print the waves a mission resolves to
 //   f3d_inspect <pack> validate            count how many missions resolve end to end
 #include "content/encounter.h"
+#include "content/skills.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -36,6 +37,11 @@ int main(int argc, char** argv) {
             for (const EnemySpec& m : w.enemies)
                 std::printf("  slot %2d  monster %-10d lv %-3d hp %-12lld mp %-8d atk %-8d def %-10d mag %-8d spr %-10d parts %d\n",
                             m.order, m.monster_id, m.level, (long long)m.hp, m.mp, m.atk, m.def, m.mag, m.spr, m.parts);
+            std::vector<Ability> abs; std::vector<SkillInfo> names;
+            for (const EnemySpec& m : w.enemies) { std::vector<uint32_t> mine; load_monster_skills(pack, m.skill_set_id, abs, mine, names); }
+            for (size_t i = 0; i < abs.size(); ++i)
+                std::printf("  skill %-8u %-28s kind %d elements 0x%02x hits %d (first at frame %d)\n", abs[i].id, names[i].name,
+                            int(abs[i].kind), abs[i].element_mask, abs[i].hit_count, abs[i].hit_frame[0]);
         }
         return 0;
     }
@@ -57,6 +63,22 @@ int main(int argc, char** argv) {
         std::printf("missions in phase table: %d\n", missions);
         for (auto& kv : tally) std::printf("  %6d  %s\n", kv.second, to_string(kv.first));
         std::printf("waves resolved: %d   largest wave: %zu enemies\n", waves_total, max_enemies);
+        Table parts = pack.table("F_MONSTER_PARTS_MST");
+        int set_col = parts.valid() ? parts.column("skill_set_id") : -1;
+        if (set_col >= 0) {
+            SkillLoadStats st; int with = 0, without = 0, no_damage = 0; bool tables = true;
+            for (uint32_t r = 0; r < parts.rows() && tables; ++r) {
+                int32_t id = int32_t(parts.i64(r, uint32_t(set_col)));
+                if (!id) { ++without; continue; }
+                std::vector<Ability> abs; std::vector<uint32_t> mine; std::vector<SkillInfo> names;
+                tables = load_monster_skills(pack, id, abs, mine, names, &st);
+                ++with; if (mine.empty()) ++no_damage;
+            }
+            if (!tables) std::printf("skill tables not in this pack\n");
+            else std::printf("monster parts: %d with a skill set, %d without; %d of those with a set have no damage skill\n"
+                             "skills listed: %d   loaded as damage: %d   non-damage (not implemented): %d   missing: %d\n",
+                             with, without, no_damage, st.listed, st.loaded, st.skipped_non_damage, st.missing);
+        }
         return 0;
     }
     std::fprintf(stderr, "unknown command\n");

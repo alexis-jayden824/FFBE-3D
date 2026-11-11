@@ -20,6 +20,7 @@ struct EnemySpec {
     int order = 0;          // slot order within the group
     int parts = 0;          // number of part rows this monster has (only part 1 is used so far)
     int level = 1;
+    int32_t skill_set_id = 0;   // 0 = this monster has no skill set
     int64_t hp = 1;
     int mp = 0, atk = 1, def = 1, mag = 1, spr = 1;
 };

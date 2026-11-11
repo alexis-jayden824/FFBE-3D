@@ -22,7 +22,8 @@ INT_RE = re.compile(r"-?\d{1,10}\Z")
 
 # Console packs: just the tables (and, with --mapped-only, columns) one feature needs.
 PRESETS = {
-    "encounter": ["F_MISSION_PHASE_MST", "F_BATTLE_LOTTERY_MST", "F_BATTLE_GROUP_MST", "F_MONSTER_PARTS_MST"],
+    "encounter": ["F_MISSION_PHASE_MST", "F_BATTLE_LOTTERY_MST", "F_BATTLE_GROUP_MST", "F_MONSTER_PARTS_MST",
+                  "F_MONSTER_SKILL_SET_MST", "F_MONSTER_SKILL_MST"],
 }
 
 

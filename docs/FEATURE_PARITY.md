@@ -17,7 +17,8 @@ Last updated 2026-11-11. The placeholder battle shell boots on a New 3DS XL; not
 | Buffs, debuffs, guard | `libgame.so` | unverified | partial, host-tested | per-effect golden tests |
 | Ailments, breaks, dispel, killers, cover, counters, mitigation | `libgame.so` | unverified | not started | per-effect golden tests |
 | Limit bursts, espers, dual wield, multi-cast, Brave Shift | `libgame.so` | unverified | not started (gauge fill only) | audit each individually |
-| Enemy AI scripts, thresholds, phases | `source/server/content/battle/F_MONSTER_SKILL_SET_MST.tsv`, `F_MONSTER_SKILL_MST.tsv` | verified upstream (data present) | placeholder AI only | decode skill-set format; scripted-boss replays |
+| Enemy skills | `F_MONSTER_SKILL_SET_MST`, `F_MONSTER_SKILL_MST` | verified upstream (data present) | partial, host-tested: 49,762 damage skill slots load with name, elements, attack type and hit timing; power, targeting, effects undecoded; 27,129 non-damage slots not implemented | decode remaining columns; golden fights |
+| Enemy AI scripts, thresholds, phases | same tables (conditions undecoded) | unverified | random choice among damage skills | scripted-boss replays |
 | Encounters, waves | `F_BATTLE_GROUP_MST`, `F_MISSION_PHASE_MST`, `F_BATTLE_LOTTERY_MST`, `F_MONSTER_PARTS_MST`; chain documented in `source/server/battle_content.py` | verified upstream | partial, host-tested: 14,444 of 15,307 missions with battle phases resolve on real data; body part only; stat order inferred; console loading compiled, awaiting hardware run | `f3d_inspect validate`; classify the 863 failures |
 | Drops and result settlement | `source/server/ffbe_battle.py` (`roll_drops`, `apply_result_drops`) | verified upstream | not started | port rules; statistical tests with seeded RNG |
 | Mission clear conditions | `source/server/ffbe_battle.py` (`_cond_*`, `CONDITION_CHECKS`) | verified upstream | not started | one test per condition |

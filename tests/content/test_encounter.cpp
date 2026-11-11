@@ -1,6 +1,7 @@
 // Host tests for the encounter chain. Fixture tables use the real table names
 // and column keys (so the schema mapping is exercised) but invented contents.
 #include "content/encounter.h"
+#include "content/skills.h"
 #include <cstdio>
 #include <fstream>
 #include <iterator>
@@ -67,6 +68,60 @@ int main(int argc, char** argv) {
     // Names come straight from the pack.
     { Rng s(1); std::vector<Wave> w; load_encounter(pack, 500, s, w);
       CHECK(std::string(w[0].enemies[0].name) == "Moss Imp" && std::string(w[0].enemies[1].name) == "Tin Sentry"); }
+
+    // ---- enemy skills ----
+    {
+        Ability ab;
+        CHECK(parse_hit_frames("40:33:2:2-52:33:2:2-64:34:2:2", ab) == 3);
+        CHECK(ab.hit_count == 3 && ab.hit_frame[0] == 40 && ab.hit_frame[2] == 64);
+        CHECK(ab.hit_weight_pm[0] == 330 && ab.hit_weight_pm[1] == 330 && ab.hit_weight_pm[2] == 340);
+        CHECK(parse_hit_frames("10:50:2:2-30:50:2:2@99:100:2:2", ab) == 2 && ab.hit_frame[1] == 30 && ab.hit_weight_pm[1] == 500);
+        CHECK(parse_hit_frames("", ab) == 0 && ab.hit_count == 1 && ab.hit_weight_pm[0] == 1000);
+        CHECK(parse_hit_frames("garbage", ab) == 0 && ab.hit_count == 1);
+        CHECK(parse_hit_frames("5:0:2:2", ab) == 0);                       // zero total weight
+        std::string many;
+        for (int i = 0; i < 50; ++i) many += (i ? "-" : "") + std::to_string(i * 3) + ":2:2:2";
+        CHECK(parse_hit_frames(many.c_str(), ab) == kMaxHits);              // clamped, never overflows
+        int sum = 0; for (int i = 0; i < ab.hit_count; ++i) sum += ab.hit_weight_pm[i];
+        CHECK(sum == 1000);
+
+        std::vector<Ability> abs; std::vector<uint32_t> mine; std::vector<SkillInfo> names; SkillLoadStats st;
+        CHECK(load_monster_skills(pack, 810, abs, mine, names, &st));
+        CHECK(st.listed == 3 && st.loaded == 2 && st.skipped_non_damage == 1 && st.missing == 0);
+        CHECK(abs.size() == 2 && mine.size() == 2 && names.size() == 2);
+        CHECK(abs[0].id == 9001 && abs[0].kind == AbilityKind::Physical && abs[0].element_mask == 0 && abs[0].hit_frame[0] == 42);
+        CHECK(abs[1].id == 9002 && abs[1].kind == AbilityKind::Magic && abs[1].hit_count == 3);
+        CHECK(abs[1].element_mask == ((1u << Fire) | (1u << Dark)));
+        CHECK(std::string(names[1].name) == "Ember Spit");
+        // Loading the same set again adds nothing new to the shared ability list.
+        std::vector<uint32_t> again;
+        CHECK(load_monster_skills(pack, 810, abs, again, names) && abs.size() == 2 && again.size() == 2 && names.size() == 2);
+        // Set 812 lists one hybrid water skill and one id that does not exist.
+        SkillLoadStats st2; std::vector<uint32_t> cube;
+        CHECK(load_monster_skills(pack, 812, abs, cube, names, &st2) && st2.loaded == 1 && st2.missing == 1);
+        CHECK(abs.back().kind == AbilityKind::Hybrid && abs.back().element_mask == (1u << Water) && abs.back().hit_count == 2);
+        // No set (0) and unknown set are not errors; they just add nothing.
+        std::vector<uint32_t> nothing; SkillLoadStats st3;
+        CHECK(load_monster_skills(pack, 0, abs, nothing, names, &st3) && nothing.empty() && st3.missing == 0);
+        CHECK(load_monster_skills(pack, 777, abs, nothing, names, &st3) && nothing.empty() && st3.missing == 1);
+        Pack none2; CHECK(!load_monster_skills(none2, 810, abs, nothing, names));
+
+        // The encounter carries each monster's skill set id.
+        Rng s(1); std::vector<Wave> w; load_encounter(pack, 500, s, w);
+        CHECK(w[0].enemies[0].skill_set_id == 810 && w[0].enemies[1].skill_set_id == 0);
+
+        // An enemy with several skills uses more than one of them over time, and events say which.
+        Battle b(11);
+        b.abilities = abs;
+        Unit hero; hero.max_hp = hero.hp = 1000000; hero.stat = { 10, 50, 10, 50 };
+        b.party = { hero };
+        Unit imp; imp.side = Side::Enemy; imp.max_hp = imp.hp = 100; imp.stat = { 30, 10, 30, 10 }; imp.abilities = mine;
+        b.enemies = { imp };
+        std::vector<HitEvent> ev; bool saw1 = false, saw2 = false;
+        for (int t = 0; t < 40; ++t) { b.enemy_turn(ev); b.end_round(); }
+        for (const HitEvent& e : ev) { saw1 |= e.ability == 9001; saw2 |= e.ability == 9002; CHECK(e.ability == 9001 || e.ability == 9002); }
+        CHECK(saw1 && saw2);
+    }
 
     // Same seed, same result.
     Rng r1(77), r2(77); std::vector<Wave> w1, w2;

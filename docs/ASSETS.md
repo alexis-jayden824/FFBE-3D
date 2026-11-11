@@ -22,6 +22,15 @@ Column names are opaque keys in the source. `tools/assets/schema.json` maps them
 | F_MONSTER_PARTS_MST | monster_id, part_num, name, hp, mp, level, skill_set_id, break_id | Same source (part rows share a monster id; part 1 is the body; level and HP are what upstream rescales for event difficulty). |
 | F_MONSTER_PARTS_MST | atk, def, mag, spr | **Inferred from column position only.** Upstream rescales these four together but never names them. Treat as unverified. |
 
+| F_MONSTER_SKILL_SET_MST | skill_set_id, skill_ids | Upstream `battle_content.py`. Data: every set is 101 comma-separated slots; all 38,053 referenced skill ids exist. |
+| F_MONSTER_SKILL_MST | skill_id, name | Upstream; names are readable text. |
+| F_MONSTER_SKILL_MST | element_flags | **Verified by correlation with skill names**: eight flags in the order fire, ice, lightning, water, wind, earth, light, dark (e.g. 275 of 324 skills named "Fir..." set only flag 1; "Blizza..." flag 2; "Thund..." flag 3; "Water..." flag 4; "Aero..." flag 5; "Quake" flag 6; "Holy"/"Banish..." flag 7; "Dark..."/"Bio..." flag 8). |
+| F_MONSTER_SKILL_MST | attack_type | **Verified by correlation**: 1 = physical (Sweep, Bite, Scratch), 2 = magic (Firaga, Meteor, Flare), 3 = hybrid (blade/fist skills), 4 = none (Store, Focus). |
+| F_MONSTER_SKILL_MST | effect_class | **Verified by correlation**: 1 = damage, 2 = protective buffs, 3 = healing, 4 = self/support, 5 = scripted messages. Only class 1 is implemented. |
+| F_MONSTER_SKILL_MST | hit_frames | Format `frame:weight:?:?` joined by `-` per hit, `@` between alternatives. Weights sum to 100 in 13,174 of the single-alternative rows. The last two fields are undecoded. Same format as the parts table's damage-frame column. |
+
+Not decoded in the skill table (20 further columns): power, targeting, MP cost, status effects, the effect list, and the AI conditions. Until then loaded skills hit one target at 1.0x power and enemies choose among their damage skills at random.
+
 Things the data showed that the engine must handle: 631 monster parts have HP above 32 bits (maximum 156,784,560,000); groups can hold 25 rows; monsters have up to 4 parts.
 
 Inspect a converted pack on PC:

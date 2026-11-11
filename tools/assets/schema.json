@@ -33,5 +33,17 @@
     "7wV3QZ80": "level",
     "A5x02C6a": "skill_set_id",
     "e56NZY42": "break_id"
+  },
+  "F_MONSTER_SKILL_SET_MST": {
+    "A5x02C6a": "skill_set_id",
+    "7qxLC5hP": "skill_ids"
+  },
+  "F_MONSTER_SKILL_MST": {
+    "6E5u1xrs": "skill_id",
+    "G4L0YIB2": "name",
+    "Jn6BbR2P": "element_flags",
+    "Isb1GDe2": "attack_type",
+    "yjY4GK3X": "effect_class",
+    "a9DvZ70c": "hit_frames"
   }
 }
