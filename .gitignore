@@ -18,3 +18,4 @@ data/
 *.f3ds
 party/
 *_preview.png
+sd_out/

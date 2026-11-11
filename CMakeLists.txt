@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-Wall -Wextra -Werror)
 
-add_library(f3d src/core/battle.cpp src/content/pack.cpp src/content/encounter.cpp src/content/skills.cpp src/content/sprite.cpp)
+add_library(f3d src/core/battle.cpp src/content/pack.cpp src/content/encounter.cpp src/content/skills.cpp src/content/sprite.cpp src/content/units.cpp)
 target_include_directories(f3d PUBLIC src)
 
 enable_testing()
@@ -51,3 +51,14 @@ add_custom_command(
 add_executable(test_sprite tests/content/test_sprite.cpp ${SPRITE_FIXTURE})
 target_link_libraries(test_sprite f3d)
 add_test(NAME sprite COMMAND test_sprite ${SPRITE_FIXTURE})
+
+set(UNITS_PACK ${CMAKE_BINARY_DIR}/units.f3dp)
+file(GLOB UNITS_FIXTURES ${CMAKE_SOURCE_DIR}/tests/content/fixtures/units/*)
+add_custom_command(
+  OUTPUT ${UNITS_PACK}
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/assets/mstpack.py
+          ${CMAKE_SOURCE_DIR}/tests/content/fixtures/units --preset units -o ${UNITS_PACK}
+  DEPENDS tools/assets/mstpack.py tools/assets/schema.json ${UNITS_FIXTURES})
+add_executable(test_units tests/content/test_units.cpp ${UNITS_PACK})
+target_link_libraries(test_units f3d)
+add_test(NAME units COMMAND test_units ${UNITS_PACK})

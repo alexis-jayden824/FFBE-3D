@@ -4,6 +4,7 @@
 //   f3d_inspect <pack> validate            count how many missions resolve end to end
 #include "content/encounter.h"
 #include "content/skills.h"
+#include "content/units.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -15,7 +16,7 @@
 using namespace f3d;
 
 int main(int argc, char** argv) {
-    if (argc < 3) { std::fprintf(stderr, "usage: f3d_inspect <pack> tables | mission <id> | validate\n"); return 2; }
+    if (argc < 3) { std::fprintf(stderr, "usage: f3d_inspect <pack> tables | mission <id> | unit <id> | validate\n"); return 2; }
     std::ifstream f(argv[1], std::ios::binary);
     std::vector<uint8_t> blob((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
     Pack pack;
@@ -43,6 +44,16 @@ int main(int argc, char** argv) {
                 std::printf("  skill %-8u %-28s kind %d elements 0x%02x hits %d (first at frame %d)\n", abs[i].id, names[i].name,
                             int(abs[i].kind), abs[i].element_mask, abs[i].hit_count, abs[i].hit_frame[0]);
         }
+        return 0;
+    }
+    if (!std::strcmp(argv[2], "unit") && argc > 3) {
+        UnitSpec u;
+        UnitError e = load_unit(pack, std::atoi(argv[3]), u);
+        if (e != UnitError::Ok) { std::printf("unit %s: %s\n", argv[3], to_string(e)); return 1; }
+        std::printf("%d %s  rarity %d  max level %d%s\n  hp %d  mp %d  atk %d  def %d  mag %d  spr %d\n  attack frames %s\n",
+                    u.id, u.name, u.rarity, u.max_level, u.stats_from != u.id ? "  (stats from a lower form)" : "",
+                    u.hp, u.mp, u.atk, u.def, u.mag, u.spr, u.attack_frames);
+        if (u.stats_from != u.id) std::printf("  stats row used: %d\n", u.stats_from);
         return 0;
     }
     if (!std::strcmp(argv[2], "validate")) {

@@ -68,3 +68,14 @@ Toolchain pin: not yet established (CI uses `devkitpro/devkitarm:latest`; pin th
 | Hardware (New 3DS XL), build `4d2caa7` | **Owner confirmed** unit sprites now draw the right way up and animate correctly. Reported gaps: units attacked in place instead of running to the enemy, and the victory animation skipped its lead-in. No report yet on rotated effect pieces, frame time or `linear free`. |
 | This commit | Units run to the target, strike, and run back (presentation only; battle rules and chain timing unchanged). Victory plays `win_before` once, then loops `win`. Host tests pass; console compile: see CI. **Not yet run on hardware.** |
 | Known difference from the original | Every unit runs up for every attack. In the original, ranged and magic attacks are performed from the unit's place; which abilities move the unit is in ability data that is not decoded yet. |
+
+## 2026-11-11 - real party units
+
+| Level | Result |
+| --- | --- |
+| Hardware (New 3DS XL), build `a0e85c6` | **Owner confirmed** the run-up / strike / return movement and the full victory animation ("It's fixed"). Frame time and `linear free` still not reported. |
+| Host tests | **Passed** (`core`, `encounter`, `sprite`, `units`). Unit tests use invented units with the real table and column keys: max-level stats, name lookup, lower-form fallback, broken cells, attack timing, and two units' attacks chaining in the core. |
+| Unit pack on real data | **Ran** `mstpack.py --preset units` on the full pack folder: 3,313 units and 3,097 names, 0.3 MB, under a second. `f3d_inspect unit` prints plausible values for the units tried (one with its own row, one falling back to a lower form). |
+| `party.py` on real data | **Ran**: two sprites, unit pack and `party.txt` written in SD layout; rerun reuses sprites; bad ids and more than six units are refused. |
+| 3DS compile of this commit | See the CI run for this commit. |
+| Hardware, this build | **Not run.** New on console: reading `party.txt` and the unit pack, real stats and names, per-unit attack timing, `units/<id>.f3ds` paths. |

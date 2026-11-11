@@ -29,6 +29,13 @@ Column names are opaque keys in the source. `tools/assets/schema.json` maps them
 | F_MONSTER_SKILL_MST | effect_class | **Verified by correlation**: 1 = damage, 2 = protective buffs, 3 = healing, 4 = self/support, 5 = scripted messages. Only class 1 is implemented. |
 | F_MONSTER_SKILL_MST | hit_frames | Format `frame:weight:?:?` joined by `-` per hit, `@` between alternatives. Weights sum to 100 in 13,174 of the single-alternative rows. The last two fields are undecoded. Same format as the parts table's damage-frame column. |
 
+| F_UNIT_MST | unit_id, name_jp, rarity, max_level, base_unit_id | One row per rarity form. For one unit's five forms, rarity runs 2-6, max level 30/40/60/80/100, and all forms share one base id. 3,313 rows after merging the later pack's two rows. |
+| F_UNIT_MST | hp, mp, atk, def, mag, spr | Each cell is four numbers; the first two rise with rarity and are read as level-1 and max-level values (e.g. HP 378 -> 1144 at rarity 2, 821 -> 2488 at rarity 5). All 3,311 rows parse. Order taken from column order; **consistent with the stats commonly published for that unit, not checked against a running game.** The last two numbers (usually 900,450 for HP) are undecoded. |
+| F_UNIT_MST | attack_frames | Same `frame:weight:?:?` format as enemy skills; every row parses. |
+| F_TEXT_UNITS_NAME | id, text | Text tables are `{key: "MST_UNIT_NAME_<id>", v: [text, ...]}`; the packer stores id -> first text. 3,092 of 3,311 units get an English name by id or base id. |
+
+421 of 3,243 unit sprites have no row in F_UNIT_MST (mostly the 7-star form of early units); the loader falls back to the nearest lower form and reports it.
+
 Not decoded in the skill table (20 further columns): power, targeting, MP cost, status effects, the effect list, and the AI conditions. Until then loaded skills hit one target at 1.0x power and enemies choose among their damage skills at random.
 
 Things the data showed that the engine must handle: 631 monster parts have HP above 32 bits (maximum 156,784,560,000); groups can hold 25 rows; monsters have up to 4 parts.

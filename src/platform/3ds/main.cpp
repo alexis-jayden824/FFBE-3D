@@ -2,9 +2,10 @@
 //
 // Scenes: mission select -> battle (all waves of the mission) -> result.
 // Enemies and their damage skills (name, element, attack type, hit timing)
-// come from the encounter pack on SD if present. Party members are drawn with
-// real converted unit sprites if party/1.f3ds..6.f3ds exist on SD; their stats
-// are still placeholders. Skill power, targeting and enemy AI are not decoded,
+// come from the encounter pack on SD if present. The party comes from
+// party.txt (unit ids), the unit pack (max-level stats, names, normal-attack
+// timing) and units/<id>.f3ds sprites; abilities other than the normal attack
+// are not implemented. Skill power, targeting and enemy AI are not decoded,
 // and enemies and backgrounds are still placeholder rectangles.
 // Without a pack the program still runs, with a built-in placeholder fight.
 //
@@ -18,6 +19,7 @@
 
 #include "content/encounter.h"
 #include "content/skills.h"
+#include "content/units.h"
 #include "core/battle.h"
 #include "unit_sprite.h"
 
@@ -27,7 +29,11 @@ namespace {
 
 constexpr const char* kPackPath = "sdmc:/3ds/ffbe3d/encounter.f3dp";
 constexpr int kParty = 6;
-constexpr const char* kPartyDir = "sdmc:/3ds/ffbe3d/party";   // 1.f3ds .. 6.f3ds, one per party slot
+constexpr const char* kUnitsPackPath = "sdmc:/3ds/ffbe3d/units.f3dp";   // unit stats and names
+constexpr const char* kPartyFile = "sdmc:/3ds/ffbe3d/party.txt";       // up to six unit ids, one per line
+constexpr const char* kUnitsDir = "sdmc:/3ds/ffbe3d/units";            // <unit id>.f3ds sprites
+constexpr const char* kPartyDir = "sdmc:/3ds/ffbe3d/party";            // older layout: 1.f3ds .. 6.f3ds, sprite only
+constexpr uint32_t kUnitAttackBase = 0xF0000000u;                       // + slot: that unit's normal attack
 constexpr float kUnitSize = 1.0f;                               // relative to the original art
 
 constexpr u32 kBg = C2D_Color32(18, 20, 28, 255);
@@ -75,27 +81,43 @@ struct LoadedPack {
     uint8_t* data = nullptr;
     size_t size = 0;
     Pack pack;
-    const char* status = "";
+    char status[80] = "";
     bool ok = false;
 };
 
-void load_pack(LoadedPack& lp) {
-    FILE* f = fopen(kPackPath, "rb");
-    if (!f) { lp.status = "No encounter pack on SD (placeholder fight only)"; return; }
+// `what` names the pack in messages ("Encounter", "Unit"); `limit` guards against copying the wrong file.
+void load_pack(LoadedPack& lp, const char* path, const char* what, long limit) {
+    FILE* f = fopen(path, "rb");
+    if (!f) { snprintf(lp.status, sizeof lp.status, "No %s pack on SD", what); return; }
     fseek(f, 0, SEEK_END);
     long n = ftell(f);
     fseek(f, 0, SEEK_SET);
-    if (n <= 0 || n > 16 * 1024 * 1024) { fclose(f); lp.status = "Encounter pack has an unexpected size"; return; }
+    if (n <= 0 || n > limit) { fclose(f); snprintf(lp.status, sizeof lp.status, "%s pack has an unexpected size", what); return; }
     lp.data = static_cast<uint8_t*>(malloc(size_t(n)));
-    if (!lp.data) { fclose(f); lp.status = "Not enough memory for the encounter pack"; return; }
+    if (!lp.data) { fclose(f); snprintf(lp.status, sizeof lp.status, "Not enough memory for the %s pack", what); return; }
     size_t got = fread(lp.data, 1, size_t(n), f);
     fclose(f);
     if (got != size_t(n) || !lp.pack.open(lp.data, got)) {
         free(lp.data); lp.data = nullptr;
-        lp.status = "Encounter pack is corrupt or incomplete - rebuild and recopy it";
+        snprintf(lp.status, sizeof lp.status, "%s pack is corrupt - rebuild and recopy it", what);
         return;
     }
-    lp.size = got; lp.ok = true; lp.status = "Encounter pack loaded";
+    lp.size = got; lp.ok = true;
+    snprintf(lp.status, sizeof lp.status, "%s pack loaded", what);
+}
+
+// Reads up to kParty unit ids, one per line. Returns how many were read.
+int read_party_file(int32_t ids[kParty]) {
+    FILE* f = fopen(kPartyFile, "r");
+    if (!f) return 0;
+    int n = 0;
+    char line[64];
+    while (n < kParty && fgets(line, sizeof line, f)) {
+        long v = strtol(line, nullptr, 10);
+        if (v > 0 && v <= 0x7fffffff) ids[n++] = int32_t(v);
+    }
+    fclose(f);
+    return n;
 }
 
 // ---- battle setup -----------------------------------------------------------
@@ -108,13 +130,21 @@ void add_abilities(Battle& b) {
     b.abilities = { slash, bite };
 }
 
-// Placeholder party, scaled to the mission's highest enemy level so any mission is fightable.
-void add_party(Battle& b, int level) {
+// Slots with a real unit get its max-level stats and its own normal attack.
+// Other slots get a placeholder scaled to the mission's highest enemy level.
+void add_party(Battle& b, int level, const UnitSpec specs[kParty], const bool has_spec[kParty]) {
     for (int i = 0; i < kParty; ++i) {
-        Unit u; u.side = Side::Party; u.level = level;
-        u.max_hp = u.hp = 600 + 60 * level; u.max_mp = u.mp = 60;
-        u.stat = { 60 + 8 * level + i * 3, 40 + 4 * level, 40 + 4 * level, 40 + 4 * level };
-        u.abilities = { kPartyAttack };
+        Unit u;
+        if (has_spec[i]) {
+            Ability atk;
+            make_party_unit(specs[i], kUnitAttackBase + u32(i), u, atk);
+            b.abilities.push_back(atk);
+        } else {
+            u.side = Side::Party; u.level = level;
+            u.max_hp = u.hp = 600 + 60 * level; u.max_mp = u.mp = 60;
+            u.stat = { 60 + 8 * level + i * 3, 40 + 4 * level, 40 + 4 * level, 40 + 4 * level };
+            u.abilities = { kPartyAttack };
+        }
         b.party.push_back(u);
     }
 }
@@ -147,17 +177,34 @@ int main() {
     if (is_new) osSetSpeedupEnable(true);
 
     LoadedPack lp;
-    load_pack(lp);
+    load_pack(lp, kPackPath, "Encounter", 16L * 1024 * 1024);
     std::vector<int32_t> missions;
     if (lp.ok) list_missions(lp.pack, missions);
 
-    // Party sprites: slot i uses party/<i+1>.f3ds if it exists, else a placeholder rectangle.
+    // Party: unit ids from party.txt, stats and names from the unit pack, sprite from
+    // units/<id>.f3ds. A slot missing any of these degrades on its own: no stats ->
+    // placeholder stats; no sprite -> placeholder rectangle. Without party.txt the older
+    // party/1..6.f3ds sprites are still used.
+    LoadedPack up;
+    load_pack(up, kUnitsPackPath, "Unit", 8L * 1024 * 1024);
+    int32_t party_ids[kParty] = {};
+    const int party_n = read_party_file(party_ids);
+    UnitSpec party_spec[kParty];
+    bool has_spec[kParty] = {};
     UnitSprite party_sprite[kParty];
     SpriteAnimator party_anim[kParty];
-    int sprites_loaded = 0;
+    int sprites_loaded = 0, specs_loaded = 0, lower_form = 0;
     for (int i = 0; i < kParty; ++i) {
-        char path[64];
-        snprintf(path, sizeof path, "%s/%d.f3ds", kPartyDir, i + 1);
+        char path[80];
+        if (i < party_n) {
+            if (up.ok && load_unit(up.pack, party_ids[i], party_spec[i]) == UnitError::Ok) {
+                has_spec[i] = true; ++specs_loaded;
+                if (party_spec[i].stats_from != party_spec[i].id) ++lower_form;
+            }
+            snprintf(path, sizeof path, "%s/%ld.f3ds", kUnitsDir, (long)party_ids[i]);
+        } else {
+            snprintf(path, sizeof path, "%s/%d.f3ds", kPartyDir, i + 1);
+        }
         if (unit_sprite_load(path, party_sprite[i])) ++sprites_loaded;
     }
     // Presentation only: how a unit moves while acting. Never read by the battle rules.
@@ -245,7 +292,7 @@ int main() {
             act[i] = Act::DashOut; act_t[i] = 0;
         }
         clock_running = true;            // chain timing is measured from the first press
-        queued.push_back({ u8(i), kPartyAttack, u8(target), u16(turn_frame) });
+        queued.push_back({ u8(i), battle.party[i].abilities[0], u8(target), u16(turn_frame) });
     };
 
     while (aptMainLoop()) {
@@ -282,7 +329,7 @@ int main() {
                 for (const Wave& w : waves) for (const EnemySpec& e : w.enemies) if (e.level > level) level = e.level;
                 battle = Battle(u32(svcGetSystemTick()) | 1u);
                 add_abilities(battle);
-                add_party(battle, level);
+                add_party(battle, level, party_spec, has_spec);
                 focus = 0; last_chain = 0; last_damage = 0; confirm_retreat = false;
                 skill_names.clear(); enemy_log_n = 0;
                 start_wave(0);
@@ -401,14 +448,15 @@ int main() {
             text(12, 70, 0.5f, lp.ok ? kHp : kFocus, "%s", lp.status);
             if (lp.ok) text(12, 88, 0.5f, kWhite, "%d missions with battles", int(missions.size()));
             else text(12, 88, 0.45f, kWhite, "Expected file: %s", kPackPath);
-            text(12, 104, 0.45f, sprites_loaded ? kHp : kDim, "Party sprites loaded: %d of %d", sprites_loaded, kParty);
+            text(12, 104, 0.45f, specs_loaded ? kHp : kDim, "Party: %d of %d with real stats, %d with sprites", specs_loaded, kParty, sprites_loaded);
+            if (lower_form) text(12, 222, 0.38f, kFocus, "%d unit(s) use a lower form's stats (no data for that form)", lower_form);
             if (!waves.empty()) {
                 const Wave& w = waves[0];
                 text(12, 120, 0.5f, kWhite, "First wave: %d enem%s", int(w.enemies.size()), w.enemies.size() == 1 ? "y" : "ies");
                 for (size_t i = 0; i < w.enemies.size() && i < 5; ++i)
                     text(20, 138 + i * 16, 0.45f, kWhite, "Lv %d  %s  HP %lld", w.enemies[i].level, w.enemies[i].name, (long long)w.enemies[i].hp);
             }
-            text(12, 222, 0.42f, kDim, is_new ? "New 3DS" : "Old 3DS (unsupported, may be slow)");
+            if (!lower_form) text(12, 222, 0.42f, kDim, is_new ? "New 3DS" : "Old 3DS (unsupported, may be slow)");
         } else {
             int n = int(battle.enemies.size());
             for (int i = 0; i < n; ++i) {
@@ -483,7 +531,9 @@ int main() {
                 Rect r = card(i);
                 if (i == focus) C2D_DrawRectSolid(r.x - 2, r.y - 2, 0.2f, r.w + 4, r.h + 4, kFocus);
                 C2D_DrawRectSolid(r.x, r.y, 0.3f, r.w, r.h, (!u.alive() || fired[i]) ? kDim : kPanel);
-                text(r.x + 6, r.y + 3, 0.5f, kWhite, "Unit %d%s", i + 1, !u.alive() ? "  KO" : fired[i] ? "  acted" : "");
+                const char* tag = !u.alive() ? "  KO" : fired[i] ? "  *" : "";
+                if (has_spec[i]) text(r.x + 6, r.y + 3, 0.5f, kWhite, "%.13s%s", party_spec[i].name, tag);
+                else text(r.x + 6, r.y + 3, 0.5f, kWhite, "Unit %d%s", i + 1, tag);
                 text(r.x + 6, r.y + 20, 0.45f, kWhite, "HP %lld/%lld", (long long)u.hp, (long long)u.max_hp);
                 bar(r.x + 6, r.y + 38, r.w - 12, 5, u.hp, u.max_hp);
                 text(r.x + 6, r.y + 44, 0.38f, kWhite, "MP %d", u.mp);
@@ -503,6 +553,7 @@ int main() {
     C2D_TextBufDelete(g_text);
     for (UnitSprite& u : party_sprite) unit_sprite_free(u);
     free(lp.data);
+    free(up.data);
     C2D_Fini();
     C3D_Fini();
     gfxExit();

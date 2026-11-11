@@ -38,7 +38,8 @@ Last updated 2026-11-11. The placeholder battle shell boots on a New 3DS XL; not
 | Feature | Source | Upstream status | Our status | Test plan |
 | --- | --- | --- | --- | --- |
 | Player state, units, inventory | `source/server/player_state.py`, `ffbe_player.py`, `ffbe_state.py` | verified upstream | not started | schema doc + migration tests |
-| Unit stats / abilities master data | encrypted `.dat` (`source/exvius/decode_client_data.py`) | verified upstream | blocked: not in APK | decode locally, then pack |
+| Unit stats, names, normal attack | `data-001` pack: `static/mst_decoded/F_UNIT_MST.ndjson`, `F_TEXT_UNITS_NAME` | verified upstream (data present) | partial, host-tested: max-level stats, names and attack timing for 3,313 units; lower-form fallback for 421 sprite ids without a row; console wiring compiled, awaiting hardware run | compare stats with the Android build |
+| Unit abilities, magic, limit bursts | `F_ABILITY_MST`, `F_MAGIC_MST`, `F_LIMITBURST_MST` in the same pack | verified upstream (data present) | not started | decode columns; golden fights |
 | Equipment and recipes | `F_EQUIP_ITEM_MST`, `F_RECIPE_MST` (in APK) | verified upstream (data present) | tables packed, not interpreted | column mapping |
 | Awakening, fusion, trust | `ffbe_player.py`; release notes v0.1.30 | verified upstream (with known bug history) | not started | transaction tests |
 | Summons: banners, rates, step-ups, guarantees | `source/server/ffbe_gacha.py`, `gacha_rates.py`, `ffbe_banner.py`, `gacha_*.json` | verified upstream | not started | guarantee tests; rate sanity with seeded RNG |

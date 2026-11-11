@@ -24,6 +24,7 @@ INT_RE = re.compile(r"-?\d{1,10}\Z")
 PRESETS = {
     "encounter": ["F_MISSION_PHASE_MST", "F_BATTLE_LOTTERY_MST", "F_BATTLE_GROUP_MST", "F_MONSTER_PARTS_MST",
                   "F_MONSTER_SKILL_SET_MST", "F_MONSTER_SKILL_MST"],
+    "units": ["F_UNIT_MST", "F_TEXT_UNITS_NAME"],
 }
 
 
@@ -59,6 +60,16 @@ def parse_tsv(name, text):
 
 def parse_ndjson(name, text):
     objs = [json.loads(l) for l in text.split("\n") if l.strip()]
+    # Text tables are {"key": "MST_..._<id>", "v": [text, ...]}: store them as id -> first text
+    # so the console can look a name up by number.
+    if objs and all(set(o) == {"key", "v"} for o in objs):
+        rows = []
+        for o in objs:
+            m = re.search(r"(\d+)$", str(o["key"]))
+            v = o["v"]
+            if m:
+                rows.append([m.group(1), str(v[0] if isinstance(v, list) and v else v)])
+        return table_of(name), ["id", "text"], rows
     fields = []
     for o in objs:
         for k in o:
@@ -75,29 +86,49 @@ def parse_ndjson(name, text):
     return os.path.splitext(os.path.basename(name))[0], fields, rows
 
 
-def load_sources(paths):
-    """Yield (table_name, fields, rows) for every table found."""
-    def handle(name, data):
+def table_of(member):
+    return os.path.splitext(os.path.basename(member))[0]
+
+
+def load_sources(paths, want=None):
+    """Yield (table_name, fields, rows) for every table found.
+
+    `want` (a set of table names) skips everything else before it is read, which
+    matters with multi-gigabyte data packs. Zip files are opened in place; only
+    small archives nested inside another archive are read into memory.
+    """
+    def parse(name, data):
         if name.endswith(".tsv"):
             yield parse_tsv(name, data.decode("utf-8"))
-        elif name.endswith(".ndjson"):
+        else:
             yield parse_ndjson(name, data.decode("utf-8"))
-        elif name.endswith((".apk", ".zip")):
-            with zipfile.ZipFile(io.BytesIO(data)) as z:
-                for inner in sorted(z.namelist()):
-                    if inner.endswith((".tsv", ".ndjson", ".zip")):
-                        yield from handle(inner, z.read(inner))
+
+    def from_zip(z):
+        for info in sorted(z.infolist(), key=lambda i: i.filename):
+            inner = info.filename
+            if inner.endswith((".tsv", ".ndjson")):
+                if want is None or table_of(inner) in want:
+                    yield from parse(inner, z.read(inner))
+            elif inner.endswith(".zip") and info.file_size < 300 * 1024 * 1024:
+                with zipfile.ZipFile(io.BytesIO(z.read(inner))) as nested:
+                    yield from from_zip(nested)
+
+    def from_path(p):
+        if p.endswith((".apk", ".zip")):
+            with zipfile.ZipFile(p) as z:
+                yield from from_zip(z)
+        elif p.endswith((".tsv", ".ndjson")):
+            if want is None or table_of(p) in want:
+                with open(p, "rb") as fh:
+                    yield from parse(p, fh.read())
 
     for p in paths:
         if os.path.isdir(p):
             for root, _, files in sorted(os.walk(p)):
                 for f in sorted(files):
-                    full = os.path.join(root, f)
-                    with open(full, "rb") as fh:
-                        yield from handle(full, fh.read())
+                    yield from from_path(os.path.join(root, f))
         else:
-            with open(p, "rb") as fh:
-                yield from handle(p, fh.read())
+            yield from from_path(p)
 
 
 def build(tables, schema):
@@ -146,7 +177,7 @@ def build(tables, schema):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("inputs", nargs="+", help="tsv / ndjson files, folders, or an apk/zip")
+    ap.add_argument("inputs", nargs="+", help="tsv / ndjson files, an apk/zip, or a folder of them (e.g. the data pack folder)")
     ap.add_argument("-o", "--out", required=True)
     ap.add_argument("--schema", default=os.path.join(os.path.dirname(__file__), "schema.json"))
     ap.add_argument("--only", nargs="*", help="pack only these table names")
@@ -165,14 +196,10 @@ def main(argv=None):
         args.only = PRESETS[args.preset]
         args.mapped_only = True
 
-    tables, seen = [], set()
-    for name, fields, rows in load_sources(args.inputs):
+    tables, seen = [], {}
+    for name, fields, rows in load_sources(args.inputs, set(args.only) if args.only else None):
         if args.only and name not in args.only:
             continue
-        if name in seen:
-            print(f"warning: duplicate table {name} skipped", file=sys.stderr)
-            continue
-        seen.add(name)
         if args.mapped_only:
             keep = [i for i, k in enumerate(fields) if k in schema.get(name, {})]
             if not keep:
@@ -180,6 +207,17 @@ def main(argv=None):
                 continue
             fields = [fields[i] for i in keep]
             rows = [[r[i] for i in keep] for r in rows]
+        if name in seen:
+            # The same table again (a later data pack): its rows replace earlier rows with the same key.
+            i = seen[name]
+            if tables[i][1] != fields:
+                print(f"warning: second copy of {name} has different columns, skipped", file=sys.stderr)
+                continue
+            merged = {str(r[0]): r for r in tables[i][2]}
+            merged.update({str(r[0]): r for r in rows})
+            tables[i] = (name, fields, list(merged.values()))
+            continue
+        seen[name] = len(tables)
         tables.append((name, fields, rows))
     if not tables:
         sys.exit("no tables found")

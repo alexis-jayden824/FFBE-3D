@@ -45,5 +45,23 @@
     "Isb1GDe2": "attack_type",
     "yjY4GK3X": "effect_class",
     "a9DvZ70c": "hit_frames"
+  },
+  "F_UNIT_MST": {
+    "3HriTp6B": "unit_id",
+    "G4L0YIB2": "name_jp",
+    "9fW0TePj": "rarity",
+    "aU3o2D4t": "max_level",
+    "woghJa61": "base_unit_id",
+    "em5hx4FX": "hp",
+    "L0MX7edB": "mp",
+    "o7Ynu1XP": "atk",
+    "6tyb58Kc": "def",
+    "Y9H6TWnv": "mag",
+    "sa8Ewx3H": "spr",
+    "a9DvZ70c": "attack_frames"
+  },
+  "F_TEXT_UNITS_NAME": {
+    "id": "id",
+    "text": "text"
   }
 }
