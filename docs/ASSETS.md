@@ -68,7 +68,30 @@ Read with `tools/assets/cpk.py` (`list`, `stats`, `extract`):
 | Screen layouts | `.csv`, one per screen | 1,294 files in `layout.cpk` |
 | Audio | CRI `.acb` | 3 files in the pack; codec not inspected |
 
-Not yet inspected: unit battle sprites, maps, backgrounds (in the large `data-0NN` packs); PNG dimensions against the 3DS texture limit; the `.ssbp` version; the layout CSV schema.
+## What is in the large packs (from the first 7 of 11, file names and sizes only)
+
+| Content | Where | Notes |
+| --- | --- | --- |
+| Decoded master tables | `data-001`: `static/mst_decoded/*.ndjson` | 219 tables, 172 MB: units, abilities (32 MB), magic, limit bursts, espers, materia, missions, AI (22 MB), towns, map events, quests, story. Readable by `mstpack.py` as-is. **No separate decryption step is needed.** Columns are still opaque keys. |
+| Decoded text tables | `data-001`: `static/text_decoded/*.ndjson` | 145 tables, 94 MB. |
+| Maps | `native/common_lang/sd/map*/…` | The bulk of the data: tens of MB per chapter folder, CPK archives. Contents not yet opened. |
+| Battle backgrounds, effects | `native/common_lang/sd/battlebg`, `battleEffect` | CPK archives; contents not yet opened. |
+| Area / banner / summon art | `static/cpk_extract/…` | About 4,700 loose PNG and 260 JPG files. |
+| Unit sprites | `native/common_lang/sd/unit/Ver*_unit*_common.cpk` | See below. |
+| Limit burst movies | `native/common_lang/sd/unit/Ver*_LBMovie*.cpk`, `.usm` | 102 archives so far, up to 74 MB each. Video; not planned for the first releases. |
+
+### Unit sprite format (one archive opened: 185 units, 3,078 files)
+
+Per unit id:
+
+- `unit_anime_<id>.png` - one sprite sheet. Sizes vary from 512x1024 up to 2000x1984; **106 of 555 PNGs in the archive exceed 1024 on a side**, so sheets must be scaled or re-packed for the console.
+- `unit_cgg_<id>.csv` - frame composition: one line per frame, listing the sheet rectangles that make up the frame with offsets and per-part attributes.
+- `unit_<name>_cgs_<id>.csv` - one file per animation (`idle`, `standby`, `atk`, `magic_atk`, `magic_standby`, `limit_atk`, `move`, `jump`, `dying`, `dead`, `win_before`, `win`, and a few rarer ones): one line per step with a frame number, an offset and a delay.
+- `unit_icon_<id>.png`, `unit_ills_<id>.png` - small icon and portrait.
+
+The exact meaning of each field in the two CSV formats is not yet verified.
+
+Not yet inspected: map and background archive contents; the `.ssbp` version; the layout CSV schema; audio.
 
 ## Not built yet
 
