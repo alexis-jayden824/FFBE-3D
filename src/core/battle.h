@@ -27,7 +27,7 @@ enum class AbilityKind : uint8_t { Physical, Magic, Hybrid, Heal, Buff, Guard };
 enum class Target : uint8_t { OneEnemy, AllEnemies, OneAlly, AllAllies, Self };
 enum Stat : uint8_t { ATK, DEF, MAG, SPR, StatCount };
 
-constexpr int kMaxPerSide = 6;
+constexpr int kMaxPerSide = 32;   // real enemy groups have up to 25 rows; the party UI caps itself at 6
 constexpr int kMaxHits = 32;
 
 struct Ability {
@@ -56,8 +56,8 @@ struct Unit {
     uint32_t id = 0;
     Side side = Side::Party;
     int level = 1;
-    int max_hp = 1, max_mp = 0;
-    int hp = 1, mp = 0;
+    int64_t max_hp = 1, hp = 1;                  // real bosses exceed 32 bits
+    int max_mp = 0, mp = 0;
     std::array<int, StatCount> stat{};           // ATK DEF MAG SPR
     std::array<int, ElementCount> resist_pm{};   // +1000 = immune, -1000 = double damage
     std::array<Buff, StatCount> buff{};
@@ -94,7 +94,7 @@ struct HitEvent {
     uint16_t frame;
     Side attacker_side;
     uint8_t attacker, target;
-    int damage;          // negative = healing
+    int64_t damage;      // negative = healing
     int chain_pm;        // multiplier applied to this hit
     int chain_count;     // chain length after this hit
     bool spark;
@@ -134,7 +134,7 @@ public:
 private:
     std::vector<Unit>& units(Side s) { return s == Side::Party ? party : enemies; }
     const std::vector<Unit>& units(Side s) const { return s == Side::Party ? party : enemies; }
-    int base_damage(const Unit& atk, const Unit& def, const Ability& ab) const;
+    int64_t base_damage(const Unit& atk, const Unit& def, const Ability& ab) const;
 };
 
 } // namespace f3d

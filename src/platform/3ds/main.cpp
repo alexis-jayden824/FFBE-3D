@@ -39,9 +39,9 @@ void text(float x, float y, float size, u32 color, const char* fmt, ...) {
     C2D_DrawText(&t, C2D_WithColor, x, y, 0.5f, size, size, color);
 }
 
-void bar(float x, float y, float w, float h, int cur, int max) {
+void bar(float x, float y, float w, float h, int64_t cur, int64_t max) {
     C2D_DrawRectSolid(x, y, 0.4f, w, h, kHpBack);
-    if (max > 0 && cur > 0) C2D_DrawRectSolid(x, y, 0.45f, w * cur / max, h, kHp);
+    if (max > 0 && cur > 0) C2D_DrawRectSolid(x, y, 0.45f, w * float(double(cur) / double(max)), h, kHp);
 }
 
 // Placeholder encounter so the shell has something to simulate.
@@ -94,7 +94,8 @@ int main() {
     u32 turn_frame = 0;                  // simulation frames since the first activation
     bool clock_running = false;
     Phase phase = Phase::Command;
-    int last_chain = 0, last_damage = 0, wait = 0;
+    int last_chain = 0, wait = 0;
+    long long last_damage = 0;
 
     auto activate = [&](int i) {
         if (phase != Phase::Command || fired[i] || !battle.party[i].alive()) return;
@@ -177,7 +178,7 @@ int main() {
             C2D_DrawRectSolid(x, y, 0.3f, 36, 44, !u.alive() ? kDim : fired[i] ? kPanel : kAlly);
         }
         text(8, 218, 0.5f, kWhite, "Turn %d", battle.turn);
-        if (last_chain > 1) text(150, 6, 0.6f, kFocus, "%d CHAIN  %d", last_chain, last_damage);
+        if (last_chain > 1) text(150, 6, 0.6f, kFocus, "%d CHAIN  %lld", last_chain, last_damage);
         if (phase == Phase::Done)
             text(120, 105, 0.8f, kWhite, battle.outcome() == Outcome::Victory ? "VICTORY  (A: again)" : "DEFEAT  (A: again)");
         text(250, 222, 0.4f, kDim, is_new ? "New 3DS" : "Old 3DS (unsupported)");
@@ -190,7 +191,7 @@ int main() {
             if (i == focus) C2D_DrawRectSolid(r.x - 2, r.y - 2, 0.2f, r.w + 4, r.h + 4, kFocus);
             C2D_DrawRectSolid(r.x, r.y, 0.3f, r.w, r.h, (!u.alive() || fired[i]) ? kDim : kPanel);
             text(r.x + 6, r.y + 4, 0.5f, kWhite, "Unit %d%s", i + 1, fired[i] ? "  *" : "");
-            text(r.x + 6, r.y + 22, 0.45f, kWhite, "HP %d/%d", u.hp, u.max_hp);
+            text(r.x + 6, r.y + 22, 0.45f, kWhite, "HP %lld/%lld", (long long)u.hp, (long long)u.max_hp);
             bar(r.x + 6, r.y + 40, r.w - 12, 5, u.hp, u.max_hp);
             text(r.x + 6, r.y + 47, 0.4f, kWhite, "MP %d", u.mp);
         }

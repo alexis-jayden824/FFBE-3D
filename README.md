@@ -2,15 +2,16 @@
 
 A native New Nintendo 3DS engine for playing an offline, preserved copy of *Final Fantasy Brave Exvius*, using both screens and physical controls.
 
-**Status: early development. Not playable.** The battle core passes its PC tests; the console build compiles in CI but has not yet been run on an emulator or console. See [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
+**Status: early development. Not playable.** The battle core passes its PC tests; the console build boots on a New 3DS XL and shows a placeholder battle screen. See [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
 
 This is an unofficial fan project, not affiliated with Square Enix or gumi. **The repository contains no game content** - only original engine code and conversion tools. You supply your own data; converted output stays on your machine.
 
 ## What exists
 
 - `src/core/` - deterministic battle core: damage, elements, buffs, guard, timed multi-hit chaining with spark and cap.
-- `src/content/` - zero-copy reader for converted table packs.
+- `src/content/` - zero-copy reader for converted table packs; resolves a mission into its enemy waves.
 - `src/platform/3ds/` - dual-screen battle shell (top: field, bottom: six command cards; buttons and touch).
+- `tools/inspect/` - PC tool to list tables, print a mission's waves, and validate the encounter chain.
 - `tools/assets/mstpack.py` - packs master-data tables from an APK, zip, folder, `.tsv` or `.ndjson`.
 - `docs/` - source audit, feature matrix, architecture, risks, next steps.
 

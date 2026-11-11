@@ -1,0 +1,6 @@
+# {"table": "F_MONSTER_PARTS_MST", "fields": ["xqartN26", "6Yc4RkdM", "G4L0YIB2", "fh31sk7B", "PC97pWQj", "9NBV1XCS", "Pn5w9dfh", "84FJM3PD", "T8xMDAZ4", "7wV3QZ80"]}
+10	1	Moss Imp	90	15	30	14	10	13	1
+11	1	Tin Sentry	300	0	40	60	5	20	3
+12	2	Gel Cube Arm	50	0	9	9	9	9	5
+12	1	Gel Cube	120	20	22	18	30	25	5
+13	1	Vault Colossus	150000000000	999	5000	9000	4000	8000	99

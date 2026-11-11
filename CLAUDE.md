@@ -21,12 +21,14 @@ Native New 3DS reimplementation of the client side of FFBE offline. Owner's full
 ```
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build && ctest --test-dir build --output-on-failure
 python3 tools/assets/mstpack.py <apk|zip|folder|tsv|ndjson> -o data/master.f3dp
+./build/f3d_inspect data/master.f3dp validate      # or: tables | mission <id>
 ```
 
-`make` (console build) passes in CI (`devkitpro/devkitarm:latest`); the resulting `.3dsx` has not been run on an emulator or console.
+`make` (console build) passes in CI (`devkitpro/devkitarm:latest`); the first build boots on the owner's New 3DS XL (inputs not yet confirmed).
 
 ## Key facts
 
 - Upstream = original `libgame.so` (arm64, Cocos) + Frida hooks + local Python server. Client logic has no source; server-side rules (rewards, drops, gacha, shops, clear conditions) are in `source/server/*.py`.
 - APK contains tables and text only; sprites/maps/audio are in ~14.65 GB of CPK/ACB release packs, formats unverified.
 - Battle formulas in `src/core/battle.cpp` are from general knowledge and unverified against the real game.
+- Encounter chain (mission -> phases -> lottery -> group -> monster parts) is implemented in `src/content/encounter.cpp`; battle phases have `phase_type` 2. HP needs 64 bits. ATK/DEF/MAG/SPR column order is inferred, not verified.

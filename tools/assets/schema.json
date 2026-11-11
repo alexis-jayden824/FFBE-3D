@@ -1,3 +1,37 @@
 {
-  "_comment": "Maps opaque source column keys to readable names, per table. Only add a mapping once it has been verified by observing the data; unmapped keys pass through unchanged. Format: { \"TABLE_NAME\": { \"sourceKey\": \"readable_name\" } }"
+  "_comment": "Maps opaque source column keys to readable names, per table. Add a mapping only after verifying it against data; unmapped keys pass through unchanged. See docs/ASSETS.md for the evidence behind each entry.",
+  "F_MISSION_PHASE_MST": {
+    "qo3PECw6": "mission_id",
+    "6v7y3QcJ": "phase_order",
+    "gou39JeI": "phase_type",
+    "6uIYE15X": "lottery_id"
+  },
+  "F_BATTLE_LOTTERY_MST": {
+    "c2gnh6Jd": "lottery_id",
+    "ixDq7yJ8": "weight",
+    "2fY1IomW": "group_id"
+  },
+  "F_BATTLE_GROUP_MST": {
+    "2fY1IomW": "group_id",
+    "xqartN26": "monster_id",
+    "Z0EN6jSh": "slot_order"
+  },
+  "F_MONSTER_MST": {
+    "xqartN26": "monster_id",
+    "G4L0YIB2": "name"
+  },
+  "F_MONSTER_PARTS_MST": {
+    "xqartN26": "monster_id",
+    "6Yc4RkdM": "part_num",
+    "G4L0YIB2": "name",
+    "fh31sk7B": "hp",
+    "PC97pWQj": "mp",
+    "9NBV1XCS": "atk",
+    "Pn5w9dfh": "def",
+    "84FJM3PD": "mag",
+    "T8xMDAZ4": "spr",
+    "7wV3QZ80": "level",
+    "A5x02C6a": "skill_set_id",
+    "e56NZY42": "break_id"
+  }
 }

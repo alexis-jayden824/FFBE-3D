@@ -35,7 +35,7 @@ bool Battle::can_use(Side side, const Action& a) const {
 // Damage before chain, variance and hit split.
 //   physical: ATK^2 / DEF      magic: MAG^2 / SPR      hybrid: average of both
 // then * power * (1 + level/100) * element modifier, halved if the target guards.
-int Battle::base_damage(const Unit& atk, const Unit& def, const Ability& ab) const {
+int64_t Battle::base_damage(const Unit& atk, const Unit& def, const Ability& ab) const {
     auto one = [&](Stat off, Stat dfn) -> int64_t {
         int64_t o = atk.eff(off);
         int64_t d = int64_t(def.eff(dfn)) * (1000 - ab.ignore_def_pm) / 1000;
@@ -62,7 +62,8 @@ int Battle::base_damage(const Unit& atk, const Unit& def, const Ability& ab) con
         dmg = dmg * mod / 1000;
     }
     if (def.guarding) dmg /= 2;
-    return dmg > 0x3fffffff ? 0x3fffffff : int(dmg);
+    const int64_t cap = int64_t(1) << 50;   // keeps later permille multiplies inside int64
+    return dmg > cap ? cap : dmg;
 }
 
 namespace {
@@ -71,7 +72,7 @@ struct Pending {
     uint8_t actor, target, hit_index;
     uint8_t order;           // queue order, for stable tie-breaking
     const Ability* ab;
-    int total;               // full-ability damage against this target
+    int64_t total;           // full-ability damage against this target
 };
 struct ChainState { int count = 0; int last_frame = -1000; int last_actor = -1; };
 }
@@ -108,7 +109,7 @@ void Battle::resolve(Side side, const std::vector<Action>& actions, std::vector<
         if (ab.kind == AbilityKind::Heal) {
             for (int i = 0; i < n; ++i) {
                 Unit& t = pool[idx[i]];
-                int heal = int(int64_t(u.eff(SPR)) * ab.power_pm / 1000 * (100 + u.level) / 100);
+                int64_t heal = int64_t(u.eff(SPR)) * ab.power_pm / 1000 * (100 + u.level) / 100;
                 heal = std::min(heal, t.max_hp - t.hp);
                 t.hp += heal;
                 out.push_back({ a.start_frame, side, a.actor, idx[i], -heal, 1000, 0, false, false });
@@ -118,7 +119,7 @@ void Battle::resolve(Side side, const std::vector<Action>& actions, std::vector<
 
         // Damage: one roll of variance per ability use per target (85-100%).
         for (int i = 0; i < n; ++i) {
-            int total = int(int64_t(base_damage(u, them[idx[i]], ab)) * rng.range(850, 1000) / 1000);
+            int64_t total = base_damage(u, them[idx[i]], ab) * rng.range(850, 1000) / 1000;
             for (uint8_t h = 0; h < ab.hit_count; ++h)
                 hits.push_back({ uint16_t(a.start_frame + ab.hit_frame[h]), a.actor, idx[i], h, order, &ab, total });
         }
@@ -157,9 +158,9 @@ void Battle::resolve(Side side, const std::vector<Action>& actions, std::vector<
         c.last_frame = p.frame;
         c.last_actor = p.actor;
 
-        int dmg = int(int64_t(p.total) * p.ab->hit_weight_pm[p.hit_index] / 1000 * mult / 1000);
+        int64_t dmg = p.total * p.ab->hit_weight_pm[p.hit_index] / 1000 * mult / 1000;
         if (dmg < 1) dmg = 1;
-        t.hp = std::max(0, t.hp - dmg);
+        t.hp = std::max<int64_t>(0, t.hp - dmg);
 
         Unit& u = us[p.actor];
         u.lb_gauge = std::min(u.lb_max, u.lb_gauge + p.ab->lb_fill);

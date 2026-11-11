@@ -1,10 +1,10 @@
 # Next steps
 
-State as of 2026-11-11. Milestone 0 audit is written; Milestone 1 is started.
+State as of 2026-11-11. Milestone 0 audit is written; Milestone 1 is started; the first build boots on the owner's New 3DS XL.
 
 ## Blocked on the owner
 
-1. **Run `ffbe3d.3dsx` on the New 3DS XL** (download the `ffbe3d-3dsx` artifact from the latest CI run; or name an emulator to pin) and report what both screens show. It compiles in CI but has never been run.
+1. **Report how the build behaves on the New 3DS XL beyond booting**: do D-pad, L/R, A, X, Y, B, touch and Start work; does the chain counter rise when units are fired quickly; does it exit cleanly; does closing the lid and reopening work.
 2. **Decide how decoded unit/ability tables are obtained.** They are in encrypted `.dat` files. Options: (a) run upstream's own `source/exvius/decode_client_data.py` locally and point our converter at its output; (b) defer units and continue with the monster/encounter/equipment tables already readable.
 3. **Provide one or two real data packs** (one unit sprite pack, one map pack) locally so asset formats can be identified. Do not commit them.
 
@@ -24,8 +24,12 @@ State as of 2026-11-11. Milestone 0 audit is written; Milestone 1 is started.
 ## Milestone 2 - real vertical slice
 
 - [ ] Identify and convert one unit's sprite and animation data to a citro2d atlas
-- [ ] Map columns of `F_MONSTER_PARTS_MST` / `F_MONSTER_SKILL_MST` / `F_BATTLE_GROUP_MST` in `schema.json`, verified against data
-- [ ] Load one real mission's enemy groups from the pack into `Battle`
+- [x] Map the encounter chain columns in `schema.json` (stat order still inferred)
+- [x] Resolve a real mission into waves and spawn them into `Battle` (host only; `f3d_inspect`)
+- [ ] Verify ATK/DEF/MAG/SPR column order against an observed fight
+- [ ] Multi-part monsters: only the body part is spawned today
+- [ ] Map `F_MONSTER_SKILL_SET_MST` / `F_MONSTER_SKILL_MST` so enemies use their real actions
+- [ ] Load the pack from SD on console and fight a real wave there
 - [ ] One exploration area with Circle Pad movement and collision
 - [ ] Rewards per upstream `ffbe_battle.py` rules; versioned save with atomic write; reload
 
@@ -35,7 +39,9 @@ State as of 2026-11-11. Milestone 0 audit is written; Milestone 1 is started.
 - [ ] Drop rolling with seeded statistical tests
 - [ ] Save schema draft (`docs/SAVE_FORMAT.md`) after reading upstream `player_state.py`
 - [ ] Summon rules: rates, guarantees, step-ups, with deterministic tests
-- [ ] Split packs per table; content validator for dangling IDs
+- [ ] Split packs per table (17.9 MB single blob is too big to load whole on console)
+- [x] Content validator for the encounter chain (`f3d_inspect validate`)
+- [ ] Classify the 863 unresolved missions (inherited upstream gaps vs our bugs)
 
 ## Docs still to write
 

@@ -25,7 +25,7 @@ static Ability strike(uint32_t id, int hits, int gap) {
     return a;
 }
 
-static int total(const std::vector<HitEvent>& ev) { int s = 0; for (auto& e : ev) s += e.damage; return s; }
+static int64_t total(const std::vector<HitEvent>& ev) { int64_t s = 0; for (auto& e : ev) s += e.damage; return s; }
 
 static Battle two_vs_one(uint32_t seed = 7) {
     Battle b(seed);

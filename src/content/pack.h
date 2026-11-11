@@ -26,6 +26,12 @@ public:
     int32_t i(uint32_t row, uint32_t col) const;
     const char* s(uint32_t row, uint32_t col) const;
     int find(int32_t key) const;                 // row index by column 0, -1 if missing
+    // First row whose column 0 is >= key (== rows() if none). Tables with several
+    // rows per key are walked with: for (r = lower_bound(k); r < rows() && i(r,0) == k; ++r)
+    uint32_t lower_bound(int32_t key) const;
+    // Integer value of a cell whether it was stored as i32 or (because some row
+    // overflowed 32 bits) as text. Returns 0 for non-numeric text.
+    int64_t i64(uint32_t row, uint32_t col) const;
 
 private:
     friend class Pack;

@@ -1,4 +1,5 @@
 #include "content/pack.h"
+#include <cstdlib>
 #include <cstring>
 
 namespace f3d {
@@ -62,15 +63,22 @@ const char* Table::s(uint32_t row, uint32_t col) const {
     return reinterpret_cast<const char*>(base_ + uint32_t(i(row, col)));
 }
 
-int Table::find(int32_t key) const {
+uint32_t Table::lower_bound(int32_t key) const {
     uint32_t lo = 0, hi = row_count_;
     while (lo < hi) {
         uint32_t mid = lo + (hi - lo) / 2;
-        int32_t v = i(mid, 0);
-        if (v == key) return int(mid);
-        if (v < key) lo = mid + 1; else hi = mid;
+        if (i(mid, 0) < key) lo = mid + 1; else hi = mid;
     }
-    return -1;
+    return lo;
+}
+
+int Table::find(int32_t key) const {
+    uint32_t r = lower_bound(key);
+    return (r < row_count_ && i(r, 0) == key) ? int(r) : -1;
+}
+
+int64_t Table::i64(uint32_t row, uint32_t col) const {
+    return is_string(col) ? std::strtoll(s(row, col), nullptr, 10) : int64_t(i(row, col));
 }
 
 } // namespace f3d
