@@ -41,9 +41,39 @@ Inspect a converted pack on PC:
 ./build/f3d_inspect data/master.f3dp validate
 ```
 
+## Getting the data packs (works today)
+
+The art, maps, scenes and audio are in 19 packs (14.65 GB compressed) listed in the Android project's manifest. Fetch them to a folder on your PC:
+
+```
+python tools/assets/fetch_packs.py --list
+python tools/assets/fetch_packs.py --dest D:\\FFBE-data
+python tools/assets/fetch_packs.py --dest D:\\FFBE-data --only client-assets data-001
+python tools/assets/fetch_packs.py --dest D:\\FFBE-data --verify
+```
+
+It checks free space, resumes partial downloads, verifies each pack's SHA-256 against the manifest before giving it its final name, and skips packs that are already complete. Keep the folder **outside the repository and outside any cloud-synced folder** (OneDrive, Dropbox): the packs are large, are not yours to redistribute, and do not need unpacking - the tools read the zips in place.
+
+## Archive and art formats (identified from the `client-assets` pack)
+
+Read with `tools/assets/cpk.py` (`list`, `stats`, `extract`):
+
+| What | Format | Evidence |
+| --- | --- | --- |
+| Container | CRI CPK with `@UTF` tables (plain or XOR-obfuscated), TOC index, optional CRILAYLA compression | `common.cpk` (312 files), `layout.cpk` (1,294 files, obfuscated table, CRILAYLA), `resources_pretutorial.cpk` (27 files) all list and decompress |
+| Images | PNG | 193 PNGs in `common.cpk`, 15 in `resources_pretutorial.cpk` |
+| Sprite sheets | Cocos `.plist` (XML) next to the PNGs | 5 + 9 files |
+| Animations | SpriteStudio `.ssbp` | 1 + 3 files |
+| Fonts | bitmap `.fnt` + one OpenType font | 78 `.fnt` in `common.cpk` |
+| Screen layouts | `.csv`, one per screen | 1,294 files in `layout.cpk` |
+| Audio | CRI `.acb` | 3 files in the pack; codec not inspected |
+
+Not yet inspected: unit battle sprites, maps, backgrounds (in the large `data-0NN` packs); PNG dimensions against the 3DS texture limit; the `.ssbp` version; the layout CSV schema.
+
 ## Not built yet
 
-- Sprites, animations, maps, UI art: formats unverified (no CPK pack opened yet).
+- Conversion of PNG / plist / ssbp / layout CSV into console formats (formats identified above; no converter yet).
+- Unit sprite and map formats: large packs not yet inspected.
 - Audio: ACB container; codec unverified.
 - Unit / ability / esper tables: inside encrypted `.dat` files, not in the APK as plain tables.
 - Manifests, checksums, split packs, SD layout, free-space checks.

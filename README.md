@@ -12,6 +12,8 @@ This is an unofficial fan project, not affiliated with Square Enix or gumi. **Th
 - `src/content/` - zero-copy reader for converted table packs; resolves a mission into its enemy waves.
 - `src/platform/3ds/` - mission select, multi-wave battle and result scenes across both screens; loads real enemy waves from an SD pack if present.
 - `tools/inspect/` - PC tool to list tables, print a mission's waves, and validate the encounter chain.
+- `tools/assets/fetch_packs.py` - downloads the data packs to a folder on your PC, with resume and checksum verification.
+- `tools/assets/cpk.py` - reads the CPK archives the art ships in.
 - `tools/assets/mstpack.py` - packs master-data tables from an APK, zip, folder, `.tsv` or `.ndjson`.
 - `docs/` - source audit, feature matrix, architecture, risks, next steps.
 

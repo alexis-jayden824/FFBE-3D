@@ -82,7 +82,7 @@ Monster and encounter tables are from a JP source (`"oracle": "jp_battle_oracle/
 
 ## 4. Unverified (not yet inspected)
 
-- Sprite, animation, map and UI asset formats inside the CPK packs (no pack has been downloaded or opened).
+- Unit sprite and map formats inside the large `data-0NN` packs. (The `client-assets` pack has since been opened: CPK container, PNG, Cocos plist, SpriteStudio ssbp, bitmap fonts, CSV layouts - see ASSETS.md.)
 - Audio codec inside ACB (HCA is typical for CRI but not confirmed here).
 - Meaning of almost every table column (`tools/assets/schema.json` is empty until columns are verified).
 - Upstream save schema (`source/server/player_state.py`, `ffbe_state.py` not yet read in detail).
