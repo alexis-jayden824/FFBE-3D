@@ -126,7 +126,8 @@ def crilayla(buf):
 
 class Cpk:
     def __init__(self, path):
-        self.f = open(path, "rb")
+        """`path` is a file name, or an open seekable binary file (e.g. io.BytesIO)."""
+        self.f = open(path, "rb") if isinstance(path, (str, bytes, os.PathLike)) else path
         if self.f.read(4) != b"CPK ":
             raise ValueError(f"{path}: not a CPK archive")
         self.header = self._table(0)[0]

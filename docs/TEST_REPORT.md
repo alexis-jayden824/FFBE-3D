@@ -41,3 +41,13 @@ Toolchain pin: not yet established (CI uses `devkitpro/devkitarm:latest`; pin th
 | Skills on real data | **Ran** `f3d_inspect validate` on the 6-table console pack (4.0 MB): 14,732 monster parts have a skill set and 2,415 do not; 76,891 skill slots listed, 49,762 loaded as damage skills, 27,129 are non-damage (not implemented), 0 missing; 1,043 parts with a set have no damage skill and fall back to a generic attack. |
 | 3DS compile of this commit | See the CI run for this commit. |
 | Hardware, this build | **Not run.** New on console: enemy skills loaded per wave, skill names shown after the enemy turn. |
+
+## 2026-11-11 - unit sprites
+
+| Level | Result |
+| --- | --- |
+| Hardware (New 3DS XL), previous builds | Owner reported the mission-select build "worked" (`ee4ddc0`). The enemy-skill build (`263c157`) has not been reported on. Itemised checks (Japanese names, frame time, wave progression) remain unanswered. |
+| Host tests | **Passed** (`core`, `encounter`, `sprite`). The sprite fixture is a synthetic unit in the game's source format; the fixture script converts it and checks the output texture pixel-for-pixel, and the C++ test checks the reader, the animator and rejection of malformed files. |
+| Converter on real data | **Ran** on five real units from the packs; previews drawn from the converted files were inspected by eye and show correctly assembled characters and effects (not committed). |
+| 3DS compile of this commit | See the CI run for this commit. |
+| Hardware, this build | **Not run.** New and untested on console: loading `.f3ds` files, texture upload and orientation, flipped / rotated / additive / translucent parts, animation playback, memory use with six 4 MB textures. Texture orientation and rotation direction are the likeliest things to be wrong on first run. |

@@ -14,12 +14,13 @@ This is an unofficial fan project, not affiliated with Square Enix or gumi. **Th
 - `tools/inspect/` - PC tool to list tables, print a mission's waves, and validate the encounter chain.
 - `tools/assets/fetch_packs.py` - downloads the data packs to a folder on your PC, with resume and checksum verification.
 - `tools/assets/cpk.py` - reads the CPK archives the art ships in.
+- `tools/assets/unitsprite.py`, `spritepreview.py` - convert a unit's battle sprite for the console and preview the result on PC.
 - `tools/assets/mstpack.py` - packs master-data tables from an APK, zip, folder, `.tsv` or `.ndjson`.
 - `docs/` - source audit, feature matrix, architecture, risks, next steps.
 
 ## Build
 
-Host tests (any PC with CMake, a C++17 compiler, Python 3):
+Host tests (any PC with CMake, a C++17 compiler, Python 3 with Pillow):
 
 ```
 cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure

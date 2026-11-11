@@ -15,3 +15,6 @@ data/
 *.acb
 *.awb
 *.dat
+*.f3ds
+party/
+*_preview.png

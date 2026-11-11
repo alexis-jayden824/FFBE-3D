@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-Wall -Wextra -Werror)
 
-add_library(f3d src/core/battle.cpp src/content/pack.cpp src/content/encounter.cpp src/content/skills.cpp)
+add_library(f3d src/core/battle.cpp src/content/pack.cpp src/content/encounter.cpp src/content/skills.cpp src/content/sprite.cpp)
 target_include_directories(f3d PUBLIC src)
 
 enable_testing()
@@ -39,3 +39,15 @@ add_test(NAME encounter COMMAND test_encounter ${ENCOUNTER_PACK})
 # PC-side pack inspector / content validator.
 add_executable(f3d_inspect tools/inspect/main.cpp)
 target_link_libraries(f3d_inspect f3d)
+
+# Sprite reader test. The fixture is a synthetic unit built with Pillow; the
+# fixture script also checks the converter's own output pixel-for-pixel.
+set(SPRITE_FIXTURE ${CMAKE_BINARY_DIR}/fixture.f3ds)
+add_custom_command(
+  OUTPUT ${SPRITE_FIXTURE}
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tests/content/make_sprite_fixture.py
+          ${SPRITE_FIXTURE} ${CMAKE_BINARY_DIR}/sprite_fixture_src
+  DEPENDS tests/content/make_sprite_fixture.py tools/assets/unitsprite.py tools/assets/cpk.py)
+add_executable(test_sprite tests/content/test_sprite.cpp ${SPRITE_FIXTURE})
+target_link_libraries(test_sprite f3d)
+add_test(NAME sprite COMMAND test_sprite ${SPRITE_FIXTURE})

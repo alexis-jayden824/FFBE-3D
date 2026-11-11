@@ -2,9 +2,10 @@
 //
 // Scenes: mission select -> battle (all waves of the mission) -> result.
 // Enemies and their damage skills (name, element, attack type, hit timing)
-// come from the encounter pack on SD if present. Skill power, targeting and
-// enemy AI are not decoded, the party is a placeholder (no unit data yet) and
-// all graphics are placeholder rectangles.
+// come from the encounter pack on SD if present. Party members are drawn with
+// real converted unit sprites if party/1.f3ds..6.f3ds exist on SD; their stats
+// are still placeholders. Skill power, targeting and enemy AI are not decoded,
+// and enemies and backgrounds are still placeholder rectangles.
 // Without a pack the program still runs, with a built-in placeholder fight.
 //
 // What has and has not been run on hardware is tracked in docs/TEST_REPORT.md.
@@ -18,6 +19,7 @@
 #include "content/encounter.h"
 #include "content/skills.h"
 #include "core/battle.h"
+#include "unit_sprite.h"
 
 using namespace f3d;
 
@@ -25,6 +27,8 @@ namespace {
 
 constexpr const char* kPackPath = "sdmc:/3ds/ffbe3d/encounter.f3dp";
 constexpr int kParty = 6;
+constexpr const char* kPartyDir = "sdmc:/3ds/ffbe3d/party";   // 1.f3ds .. 6.f3ds, one per party slot
+constexpr float kUnitSize = 1.0f;                               // relative to the original art
 
 constexpr u32 kBg = C2D_Color32(18, 20, 28, 255);
 constexpr u32 kPanel = C2D_Color32(40, 46, 64, 255);
@@ -147,6 +151,24 @@ int main() {
     std::vector<int32_t> missions;
     if (lp.ok) list_missions(lp.pack, missions);
 
+    // Party sprites: slot i uses party/<i+1>.f3ds if it exists, else a placeholder rectangle.
+    UnitSprite party_sprite[kParty];
+    SpriteAnimator party_anim[kParty];
+    int sprites_loaded = 0;
+    for (int i = 0; i < kParty; ++i) {
+        char path[64];
+        snprintf(path, sizeof path, "%s/%d.f3ds", kPartyDir, i + 1);
+        if (unit_sprite_load(path, party_sprite[i])) ++sprites_loaded;
+    }
+    bool attacking[kParty] = {};
+    auto set_anim = [&](int i, const char* name, bool loop) {
+        if (!party_sprite[i].ok) return;
+        int a = party_sprite[i].sprite.find_anim(name);
+        if (a < 0) a = party_sprite[i].sprite.find_anim("idle");
+        if (a < 0) a = 0;
+        if (party_anim[i].anim != a || party_anim[i].finished) party_anim[i].play(party_sprite[i].sprite, a, loop);
+    };
+
     Scene scene = Scene::Select;
     bool show_diag = false;
     u64 last_tick = svcGetSystemTick();
@@ -200,6 +222,10 @@ int main() {
         if (!battle.enemies[target].alive()) next_target();
         if (!battle.enemies[target].alive()) return;
         fired[i] = true;
+        if (party_sprite[i].ok) {
+            int a = party_sprite[i].sprite.find_anim("atk");
+            if (a >= 0) { party_anim[i].play(party_sprite[i].sprite, a, false); attacking[i] = true; }
+        }
         clock_running = true;            // chain timing is measured from the first press
         queued.push_back({ u8(i), kPartyAttack, u8(target), u16(turn_frame) });
     };
@@ -300,6 +326,18 @@ int main() {
             if (down & (KEY_A | KEY_B)) { scene = Scene::Select; preview_dirty = true; if (missions.empty()) waves.clear(); }
         }
 
+        // Sprite animation runs on the same 60 Hz clock as the simulation.
+        if (scene != Scene::Select)
+            for (int i = 0; i < kParty; ++i) {
+                if (!party_sprite[i].ok) continue;
+                const Unit& u = battle.party[i];
+                if (attacking[i] && party_anim[i].finished) attacking[i] = false;
+                if (!u.alive()) { attacking[i] = false; set_anim(i, "dead", true); }
+                else if (scene == Scene::Result && result == Outcome::Victory) { attacking[i] = false; set_anim(i, "win", true); }
+                else if (!attacking[i]) set_anim(i, u.hp * 4 < u.max_hp ? "dying" : "idle", true);
+                party_anim[i].advance(party_sprite[i].sprite);
+            }
+
         // =================== render ===================
         u64 now = svcGetSystemTick();
         frame_ms = float(double(now - last_tick) * 1000.0 / double(SYSCLOCK_ARM11));
@@ -318,6 +356,7 @@ int main() {
             text(12, 70, 0.5f, lp.ok ? kHp : kFocus, "%s", lp.status);
             if (lp.ok) text(12, 88, 0.5f, kWhite, "%d missions with battles", int(missions.size()));
             else text(12, 88, 0.45f, kWhite, "Expected file: %s", kPackPath);
+            text(12, 104, 0.45f, sprites_loaded ? kHp : kDim, "Party sprites loaded: %d of %d", sprites_loaded, kParty);
             if (!waves.empty()) {
                 const Wave& w = waves[0];
                 text(12, 120, 0.5f, kWhite, "First wave: %d enem%s", int(w.enemies.size()), w.enemies.size() == 1 ? "y" : "ies");
@@ -337,7 +376,11 @@ int main() {
             for (int i = 0; i < kParty; ++i) {
                 const Unit& u = battle.party[i];
                 float x = 268.f + (i % 2) * 60.f, y = 30.f + (i / 2) * 60.f + (i % 2) * 14.f;
-                C2D_DrawRectSolid(x, y, 0.3f, 36, 44, !u.alive() ? kDim : fired[i] ? kPanel : kAlly);
+                SpriteStep st;
+                if (party_sprite[i].ok && party_anim[i].current(party_sprite[i].sprite, st))
+                    unit_sprite_draw(party_sprite[i], st.frame, x + 36 + st.dx * kUnitSize, y + 44 + st.dy * kUnitSize, kUnitSize, 0.3f);
+                else
+                    C2D_DrawRectSolid(x, y, 0.3f, 36, 44, !u.alive() ? kDim : fired[i] ? kPanel : kAlly);
             }
             text(6, 2, 0.45f, kWhite, "Wave %d/%d   Turn %d", wave_idx + 1, int(waves.size()), battle.turn);
             if (last_chain > 1) text(170, 2, 0.5f, kFocus, "%d CHAIN  %lld", last_chain, last_damage);
@@ -407,6 +450,7 @@ int main() {
     }
 
     C2D_TextBufDelete(g_text);
+    for (UnitSprite& u : party_sprite) unit_sprite_free(u);
     free(lp.data);
     C2D_Fini();
     C3D_Fini();

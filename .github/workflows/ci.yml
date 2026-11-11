@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - run: python3 -m pip install --user --break-system-packages pillow
       - run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build build
       - run: ctest --test-dir build --output-on-failure

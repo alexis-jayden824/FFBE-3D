@@ -89,7 +89,17 @@ Per unit id:
 - `unit_<name>_cgs_<id>.csv` - one file per animation (`idle`, `standby`, `atk`, `magic_atk`, `magic_standby`, `limit_atk`, `move`, `jump`, `dying`, `dead`, `win_before`, `win`, and a few rarer ones): one line per step with a frame number, an offset and a delay.
 - `unit_icon_<id>.png`, `unit_ills_<id>.png` - small icon and portrait.
 
-The exact meaning of each field in the two CSV formats is not yet verified.
+Field meanings, **verified by converting units and looking at the result** (`unitsprite.py` then `spritepreview.py`, which draws from the converted console file): frames assemble into coherent characters with their effects for every animation checked.
+
+- `cgg` line: anchor, part count, then 11 numbers per part: x, y, flip (bit 0 horizontal, bit 1 vertical), blend (1 = additive), opacity 0-100, rotation in degrees, sheet x, sheet y, width, height, page. Parts are listed top-most first. Across one archive (185 units, 285,154 parts): rotation is always a multiple of 90, page is always 0, 39% of parts are additive, 2,263 frames are empty, 68 parts reference a rectangle outside the sheet (dropped by the converter).
+- `cgs` line: frame number, x offset, y offset, delay in 1/60 s.
+- Rotation direction is taken as clockwise for positive values. Rotated parts only occur in effect art; a side-by-side render of both directions favoured clockwise but was not conclusive.
+
+### Converted unit sprite (`.f3ds`)
+
+`tools/assets/unitsprite.py` keeps only the sheet rectangles the chosen animations use, packs them into one power-of-two atlas of at most 1024x1024 (shrinking all pieces by one factor if they do not fit), and writes the tables plus the texture in the console's native layout. File layout: `src/content/sprite.h`.
+
+Measured at original size with the default animations (no limit burst): a 640x1280 sheet became a 1024x512 atlas (2.1 MB); 1800-1920 px sheets became 1024x1024 atlases (4.2 MB), two of the five tried having to shrink to 0.72x and 0.85x to fit. With limit burst animations included, one unit dropped to 0.52x.
 
 Not yet inspected: map and background archive contents; the `.ssbp` version; the layout CSV schema; audio.
 
