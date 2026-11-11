@@ -19,8 +19,10 @@ except ImportError:
 def load(path):
     b = open(path, "rb").read()
     magic, ver, W, H, nrect, nframe, npart, nanim, scale, nstep, tex_off, tex_size = struct.unpack_from("<4sIHHHHIHHIII", b, 0)
-    if magic != b"F3DS" or ver != 1:
+    if magic != b"F3DS":
         sys.exit(f"{path}: not a .f3ds sprite")
+    if ver != 2:
+        sys.exit(f"{path}: sprite file version {ver}; this tool reads version 2. Convert the unit again with unitsprite.py.")
     o = 36
     rects = [struct.unpack_from("<4H", b, o + i * 8) for i in range(nrect)]; o += nrect * 8
     frames = [struct.unpack_from("<IHH", b, o + i * 8)[:2] for i in range(nframe)]; o += nframe * 8
@@ -41,7 +43,7 @@ def load(path):
             s = (((y >> 3) * (W >> 3) + (x >> 3)) * 64 + m) * 4
             d = (y * W + x) * 4
             px[d], px[d + 1], px[d + 2], px[d + 3] = tex[s + 3], tex[s + 2], tex[s + 1], tex[s]
-    return dict(atlas=Image.frombytes("RGBA", (W, H), bytes(px)).transpose(Image.FLIP_TOP_BOTTOM), scale=scale, rects=rects, frames=frames, parts=parts, anims=anims, steps=steps)
+    return dict(atlas=Image.frombytes("RGBA", (W, H), bytes(px)), scale=scale, rects=rects, frames=frames, parts=parts, anims=anims, steps=steps)
 
 
 def draw_frame(s, frame, canvas, ox, oy):

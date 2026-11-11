@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cpk as cpklib
 
 MAX_ATLAS = 1024
+FILE_VERSION = 2          # 2: texture stored top row first (version 1 was bottom-first and drew garbled on hardware)
 ANIM_ORDER = ["idle", "standby", "atk", "magic_standby", "magic_atk", "limit_atk", "move", "jump",
               "dying", "dead", "win_before", "win"]
 # Converted by default. Limit burst animations carry large effect art that can
@@ -183,11 +184,13 @@ def pack(sizes, max_atlas=MAX_ATLAS):
 
 
 def swizzle(img):
-    """RGBA image -> the console's native texture bytes: bottom row first, 8x8
-    tiles in Z-order, each pixel A,B,G,R. (Bottom-first is what the console's 2D
-    library expects; a top-first texture would be read as a rotated sub-image.)"""
+    """RGBA image -> the console's native texture bytes: top row first, 8x8 tiles
+    in Z-order, each pixel A,B,G,R. The GPU reads memory row 0 as the TOP of the
+    texture (v = 1), which is why the console draws a piece at image row y with
+    v = 1 - y / height. Confirmed on hardware: a bottom-first texture (file
+    version 1) drew the wrong, upside-down pieces."""
     W, H = img.size
-    src = img.transpose(need_pillow().FLIP_TOP_BOTTOM).tobytes()
+    src = img.tobytes()
     out = bytearray(W * H * 4)
     morton = [0] * 64
     for ty in range(8):
@@ -291,7 +294,7 @@ def convert(files, unit, scale, wanted=None, max_atlas=MAX_ATLAS):
     tex = swizzle(atlas)
     header_size = 36
     tex_off = header_size + len(blob_rects) + len(blob_frames) + len(blob_parts) + len(blob_anims) + len(blob_steps)
-    header = struct.pack("<4sIHHHHIHHIII", b"F3DS", 1, W, H, len(rects), len(out_frames), npart,
+    header = struct.pack("<4sIHHHHIHHIII", b"F3DS", FILE_VERSION, W, H, len(rects), len(out_frames), npart,
                          len(anims), int(round(scale * 1000)), nstep, tex_off, len(tex))
     assert len(header) == header_size
     info = dict(unit=unit, atlas=(W, H), scale=round(scale, 3), rects=len(rects), frames=len(out_frames), parts=npart,

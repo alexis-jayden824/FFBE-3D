@@ -71,9 +71,11 @@ void unit_sprite_draw(const UnitSprite& u, uint16_t frame, float ox, float oy, f
             additive = add;
         }
 
+        // The texture is stored top row first and the GPU reads memory row 0 as
+        // v = 1, so image row y is at v = 1 - y / H (top > bottom below).
         // A vertical mirror is a horizontal mirror plus a half turn. Doing it that
-        // way keeps top > bottom in the sub-texture, which citro2d requires
-        // (top < bottom means "stored rotated" to it).
+        // way keeps top > bottom, which citro2d requires (top < bottom means
+        // "stored rotated" to it).
         bool mirror = p.flip & 1;
         int rot = ((p.rot % 360) + 360) % 360;
         if (p.flip & 2) { mirror = !mirror; rot = (rot + 180) % 360; }

@@ -4,7 +4,7 @@ State as of 2026-11-11. Milestone 0 audit is written; Milestone 1 is started; th
 
 ## Blocked on the owner
 
-1. **Convert party sprites and try the new build** (see `docs/SETUP.md` section 3): report whether units appear the right way up and facing left, whether attack effects look right, and what `linear free` the Select overlay shows with six sprites loaded. Still unanswered from earlier builds: do Japanese monster names render; frame time on a large wave; do enemy skill names appear after the enemy turn.
+1. **Re-convert the party sprites and try the fixed build**: `git pull`, run `unitsprite.py` again for each unit (old files are rejected), copy `party/` and the new `.3dsx`. Report whether units now look like the PC preview, whether attack effects look right, and the frame time and `linear free` from the Select overlay.
 2. Data packs: **done** - the owner has all 19 packs verified in `C:\FFBE-data`.
 
 ## Milestone 1 - platform foundation (in progress)

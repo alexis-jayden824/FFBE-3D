@@ -51,3 +51,12 @@ Toolchain pin: not yet established (CI uses `devkitpro/devkitarm:latest`; pin th
 | Converter on real data | **Ran** on five real units from the packs; previews drawn from the converted files were inspected by eye and show correctly assembled characters and effects (not committed). |
 | 3DS compile of this commit | See the CI run for this commit. |
 | Hardware, this build | **Not run.** New and untested on console: loading `.f3ds` files, texture upload and orientation, flipped / rotated / additive / translucent parts, animation playback, memory use with six 4 MB textures. Texture orientation and rotation direction are the likeliest things to be wrong on first run. |
+
+## 2026-11-11 - first hardware run of unit sprites: garbled, fixed
+
+| Level | Result |
+| --- | --- |
+| Hardware (New 3DS XL), build `5350beb` | **Ran; sprites garbled.** Owner converted Rain (100000107) on Windows (numbers matched ours), and sent two photos and a video. Observed: six sprites load and animate at the party positions, but each frame is assembled from the wrong, upside-down pieces of the atlas. Also confirmed from the photos: Japanese monster names render in the system font; wave counter, chain counter and enemy HP display work; six 4 MB textures load. |
+| Cause | The converter wrote the texture bottom row first. The GPU reads memory row 0 as the top (v = 1), so every piece was sampled from the vertically mirrored place in the atlas. The PC preview could not catch this because it un-flipped with the same assumption. |
+| Fix | Texture is now written top row first; file version bumped to 2 so version 1 files are rejected rather than drawn wrong. Host tests pass. **The fix has not yet been run on hardware.** |
+| Still unverified on hardware | Rotation direction, additive blending and mirrored parts cannot be judged from the garbled run. Frame time and `linear free` not yet reported. |

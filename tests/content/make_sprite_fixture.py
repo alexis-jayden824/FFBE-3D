@@ -45,8 +45,8 @@ assert info["rotated"] == 1 and info["flipped"] == 1 and info["additive"] == 1, 
 
 # Header + texture: un-swizzle and compare with the atlas the converter built.
 magic, ver, W, H, nrect, nframe, npart, nanim, scale, nstep, tex_off, tex_size = struct.unpack_from("<4sIHHHHIHHIII", blob, 0)
-assert (magic, ver, W, H, scale, tex_size) == (b"F3DS", 1, 64, 64, 500, 64 * 64 * 4)
-tex, px = blob[tex_off:], atlas.load()          # texture is stored bottom row first
+assert (magic, ver, W, H, scale, tex_size) == (b"F3DS", 2, 64, 64, 500, 64 * 64 * 4)
+tex, px = blob[tex_off:], atlas.load()          # texture is stored top row first
 for y in range(H):
     for x in range(W):
         m = 0
@@ -54,7 +54,7 @@ for y in range(H):
             m |= ((x >> b) & 1) << (2 * b) | ((y >> b) & 1) << (2 * b + 1)
         o = (((y >> 3) * (W >> 3) + (x >> 3)) * 64 + m) * 4
         a, bb, g, r = tex[o:o + 4]
-        assert (r, g, bb, a) == px[x, H - 1 - y], (x, y)
+        assert (r, g, bb, a) == px[x, y], (x, y)
 # Scaled blocks keep their colours and sizes (8x12 red, 4x4 green, 6x2 blue).
 rects = [struct.unpack_from("<4H", blob, 36 + i * 8) for i in range(nrect)]
 sizes = sorted((r[2], r[3]) for r in rects)

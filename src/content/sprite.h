@@ -6,15 +6,16 @@
 // index once, accessors then read straight from the blob.
 //
 // Layout (little endian), header 36 bytes:
-//   "F3DS" u32 version(1) u16 atlas_w u16 atlas_h u16 rects u16 frames
+//   "F3DS" u32 version(2) u16 atlas_w u16 atlas_h u16 rects u16 frames
 //   u32 parts u16 anims u16 scale_permille u32 steps u32 tex_offset u32 tex_size
 //   rects:  u16 x, y, w, h                                   (8 bytes)
 //   frames: u32 first_part, u16 part_count, u16 pad          (8 bytes)
 //   parts:  u16 rect, i16 dx, dy, rot_degrees, u8 flip, blend, opacity, pad   (12 bytes)
 //   anims:  char name[16], u32 first_step, u16 step_count, u16 pad            (24 bytes)
 //   steps:  u16 frame, i16 dx, dy, u16 delay                 (8 bytes)
-//   texture: atlas_w * atlas_h * 4 bytes, console-native (bottom row first,
-//            8x8 tiles, Z-order, bytes A,B,G,R)
+//   texture: atlas_w * atlas_h * 4 bytes, console-native (top row first,
+//            8x8 tiles, Z-order, bytes A,B,G,R). Version 1 stored it bottom row
+//            first, which drew garbled on hardware; version 1 files are rejected.
 //
 // All positions and sizes are in atlas texels, i.e. source pixels multiplied by
 // scale_permille / 1000. To draw at a given size relative to the original art,

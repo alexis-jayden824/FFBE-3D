@@ -8,11 +8,12 @@ uint16_t r16(const uint8_t* p) { return uint16_t(p[0] | p[1] << 8); }
 uint32_t r32(const uint8_t* p) { return uint32_t(p[0]) | uint32_t(p[1]) << 8 | uint32_t(p[2]) << 16 | uint32_t(p[3]) << 24; }
 bool pow2(uint32_t v) { return v && !(v & (v - 1)); }
 constexpr uint32_t kHeader = 36;
+constexpr uint32_t kVersion = 2;
 }
 
 bool Sprite::open(const uint8_t* data, size_t size, bool tables_only) {
     d_ = nullptr;
-    if (!data || size < kHeader || std::memcmp(data, "F3DS", 4) != 0 || r32(data + 4) != 1) return false;
+    if (!data || size < kHeader || std::memcmp(data, "F3DS", 4) != 0 || r32(data + 4) != kVersion) return false;
     uint16_t w = r16(data + 8), h = r16(data + 10), nrect = r16(data + 12), nframe = r16(data + 14);
     uint32_t npart = r32(data + 16);
     uint16_t nanim = r16(data + 20), scale = r16(data + 22);
