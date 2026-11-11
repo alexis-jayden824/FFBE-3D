@@ -53,7 +53,7 @@ Last updated 2026-11-11. Nothing has run on an emulator or a console yet.
 
 | Feature | Our status | Test plan |
 | --- | --- | --- |
-| Dual-screen layout, buttons, touch | implemented (`src/platform/3ds/main.cpp`), **not compiled** | CI build, then emulator, then hardware |
+| Dual-screen layout, buttons, touch | implemented (`src/platform/3ds/main.cpp`), compiles in CI, **not run** | CI build, then emulator, then hardware |
 | Table pack format + reader | implemented, host-tested incl. corrupt input | - |
 | Table converter | implemented; run against real APK (17 tables) | fixture test in CI |
 | Saves, audio, SD content loading, sleep/resume | not started | per brief section 10 and 12 |

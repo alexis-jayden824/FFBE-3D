@@ -4,16 +4,16 @@ State as of 2026-11-11. Milestone 0 audit is written; Milestone 1 is started.
 
 ## Blocked on the owner
 
-1. **Run the first CI build** and report whether `build-3dsx` goes green. The console code has never been compiled.
-2. **Run `ffbe3d.3dsx` on the New 3DS XL** (or name an emulator to pin) and report what both screens show.
-3. **Decide how decoded unit/ability tables are obtained.** They are in encrypted `.dat` files. Options: (a) run upstream's own `source/exvius/decode_client_data.py` locally and point our converter at its output; (b) defer units and continue with the monster/encounter/equipment tables already readable.
-4. **Provide one or two real data packs** (one unit sprite pack, one map pack) locally so asset formats can be identified. Do not commit them.
+1. **Run `ffbe3d.3dsx` on the New 3DS XL** (download the `ffbe3d-3dsx` artifact from the latest CI run; or name an emulator to pin) and report what both screens show. It compiles in CI but has never been run.
+2. **Decide how decoded unit/ability tables are obtained.** They are in encrypted `.dat` files. Options: (a) run upstream's own `source/exvius/decode_client_data.py` locally and point our converter at its output; (b) defer units and continue with the monster/encounter/equipment tables already readable.
+3. **Provide one or two real data packs** (one unit sprite pack, one map pack) locally so asset formats can be identified. Do not commit them.
 
 ## Milestone 1 - platform foundation (in progress)
 
-- [x] Dual-screen battle shell with buttons and touch (uncompiled)
+- [x] Dual-screen battle shell with buttons and touch (compiles in CI; not yet run)
 - [x] CI: host tests + 3dsx build job with artifact upload
-- [ ] First green console build; pin the toolchain image digest
+- [x] First green console build (run 43006702872)
+- [ ] Pin the toolchain image digest
 - [ ] SD read of a `.f3dp` pack with a clear error screen when missing or corrupt
 - [ ] Audio output (one streamed track, one sound effect) via ndsp
 - [ ] Settings file on SD; diagnostics overlay (frame time, heap, linear memory)

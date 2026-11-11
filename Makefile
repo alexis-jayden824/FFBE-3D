@@ -1,8 +1,8 @@
 # Console build (.3dsx). Requires devkitARM + libctru + citro2d/citro3d
 # (devkitPro "3ds-dev" group). Host tests use CMakeLists.txt instead.
 #
-# STATUS: derived from the devkitPro 3DS application template; first verified
-# compile is pending (see docs/TEST_REPORT.md).
+# Derived from the devkitPro 3DS application template. Builds in CI; see
+# docs/TEST_REPORT.md for what has and has not been run.
 .SUFFIXES:
 
 ifeq ($(strip $(DEVKITARM)),)

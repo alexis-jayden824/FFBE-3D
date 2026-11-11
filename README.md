@@ -2,7 +2,7 @@
 
 A native New Nintendo 3DS engine for playing an offline, preserved copy of *Final Fantasy Brave Exvius*, using both screens and physical controls.
 
-**Status: early development. Not playable.** The battle core passes its PC tests; the console build has not yet been compiled or run. See [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
+**Status: early development. Not playable.** The battle core passes its PC tests; the console build compiles in CI but has not yet been run on an emulator or console. See [docs/TEST_REPORT.md](docs/TEST_REPORT.md).
 
 This is an unofficial fan project, not affiliated with Square Enix or gumi. **The repository contains no game content** - only original engine code and conversion tools. You supply your own data; converted output stays on your machine.
 

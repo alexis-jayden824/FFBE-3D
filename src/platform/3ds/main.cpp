@@ -3,7 +3,7 @@
 //
 // Everything drawn here is placeholder geometry and placeholder units. It
 // exists to prove the platform layer and the input model, not to look like
-// the game. STATUS: not yet compiled or run on hardware/emulator - see
+// the game. STATUS: compiles in CI; not yet run on hardware/emulator - see
 // docs/TEST_REPORT.md.
 #include <3ds.h>
 #include <citro2d.h>

@@ -23,7 +23,7 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build && ctest -
 python3 tools/assets/mstpack.py <apk|zip|folder|tsv|ndjson> -o data/master.f3dp
 ```
 
-`make` (console build) has **not** been verified yet.
+`make` (console build) passes in CI (`devkitpro/devkitarm:latest`); the resulting `.3dsx` has not been run on an emulator or console.
 
 ## Key facts
 
